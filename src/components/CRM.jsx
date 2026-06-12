@@ -15,28 +15,25 @@ export default function CRM() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState(null);
   const [newClient, setNewClient] = useState({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" });
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) setUserId(session.user.id);
-    });
-    fetchClients();
-  }, []);
+  useEffect(() => { fetchClients(); }, []);
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    if (error) console.log("Erreur fetch:", error);
     setClients(data || []);
     setLoading(false);
   };
 
   const addClient = async () => {
-    if (!newClient.nom || !userId) return;
-    const avatar = newClient.nom[0].toUpperCase();
-    const { error } = await supabase.from("clients").insert([{ ...newClient, user_id: userId, avatar }]);
-    if (!error) { fetchClients(); setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" }); setShowForm(false); }
+    if (!newClient.nom) return;
+    const { error } = await supabase.from("clients").insert([{ ...newClient }]);
+    if (error) { console.log("Erreur insert:", error); return; }
+    fetchClients();
+    setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" });
+    setShowForm(false);
   };
 
   const deleteClient = async (id) => {
@@ -82,7 +79,6 @@ export default function CRM() {
         style={{ width: "100%", background: "#111128", border: "1px solid #1E1E38", borderRadius: 10, padding: "10px 16px", color: "#E8E8F0", fontSize: 13, outline: "none", marginBottom: 16, boxSizing: "border-box" }} />
 
       {loading && <div style={{ color: "#6B6B8A", textAlign: "center", padding: 40 }}>Chargement...</div>}
-
       {!loading && (
         <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 1fr" : "1fr", gap: 20 }}>
           <div style={{ background: "#111128", border: "1px solid #1E1E38", borderRadius: 14, overflow: "hidden" }}>
@@ -99,7 +95,6 @@ export default function CRM() {
               </div>
             ))}
           </div>
-
           {selected && (
             <div style={{ background: "#111128", border: "1px solid #1E1E38", borderRadius: 14, padding: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
@@ -112,7 +107,7 @@ export default function CRM() {
                 </div>
                 <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", color: "#6B6B8A", fontSize: 18, cursor: "pointer" }}>✕</button>
               </div>
-              {[["Contact", selected.contact], ["Téléphone", selected.telephone], ["Email", selected.email], ["Secteur", selected.secteur], ["Valeur", selected.valeur !== "–" ? selected.valeur + " FCFA" : "–"]].map(([label, val]) => (
+              {[["Contact", selected.contact], ["Téléphone", selected.telephone], ["Email", selected.email], ["Secteur", selected.secteur], ["Valeur", selected.valeur ? selected.valeur + " FCFA" : "–"]].map(([label, val]) => (
                 <div key={label} style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 11, color: "#6B6B8A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>{label}</div>
                   <div style={{ fontSize: 13, color: "#E8E8F0" }}>{val}</div>
