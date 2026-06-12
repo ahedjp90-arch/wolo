@@ -15,22 +15,27 @@ export default function CRM() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [newClient, setNewClient] = useState({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" });
 
-  useEffect(() => { fetchClients(); }, []);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUserId(session.user.id);
+    });
+    fetchClients();
+  }, []);
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
-    if (!error) setClients(data || []);
+    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    setClients(data || []);
     setLoading(false);
   };
 
   const addClient = async () => {
-    if (!newClient.nom) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    if (!newClient.nom || !userId) return;
     const avatar = newClient.nom[0].toUpperCase();
-    const { error } = await supabase.from("clients").insert([{ ...newClient, user_id: user.id, avatar }]);
+    const { error } = await supabase.from("clients").insert([{ ...newClient, user_id: userId, avatar }]);
     if (!error) { fetchClients(); setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" }); setShowForm(false); }
   };
 
@@ -117,9 +122,7 @@ export default function CRM() {
                 <div style={{ fontSize: 11, color: "#6B6B8A", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Notes</div>
                 <div style={{ fontSize: 13, color: "#E8E8F0", background: "#0F0F1A", borderRadius: 8, padding: "10px 14px", lineHeight: 1.5 }}>{selected.notes}</div>
               </div>
-              <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-                <button onClick={() => deleteClient(selected.id)} style={{ flex: 1, background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 8, color: "#E85555", padding: "8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Supprimer</button>
-              </div>
+              <button onClick={() => deleteClient(selected.id)} style={{ marginTop: 16, width: "100%", background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 8, color: "#E85555", padding: "8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Supprimer</button>
             </div>
           )}
         </div>

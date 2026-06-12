@@ -7,21 +7,26 @@ export default function Finances() {
   const [showForm, setShowForm] = useState(false);
   const [filtre, setFiltre] = useState("tous");
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [newTx, setNewTx] = useState({ type: "entree", libelle: "", montant: "", date: "", categorie: "", statut: "encaissé" });
 
-  useEffect(() => { fetchTransactions(); }, []);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUserId(session.user.id);
+    });
+    fetchTransactions();
+  }, []);
 
   const fetchTransactions = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("transactions").select("*").order("created_at", { ascending: false });
-    if (!error) setTransactions(data || []);
+    const { data } = await supabase.from("transactions").select("*").order("created_at", { ascending: false });
+    setTransactions(data || []);
     setLoading(false);
   };
 
   const addTx = async () => {
-    if (!newTx.libelle || !newTx.montant) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("transactions").insert([{ ...newTx, user_id: user.id, montant: parseInt(newTx.montant) }]);
+    if (!newTx.libelle || !newTx.montant || !userId) return;
+    const { error } = await supabase.from("transactions").insert([{ ...newTx, user_id: userId, montant: parseInt(newTx.montant) }]);
     if (!error) { fetchTransactions(); setNewTx({ type: "entree", libelle: "", montant: "", date: "", categorie: "", statut: "encaissé" }); setShowForm(false); }
   };
 
@@ -62,21 +67,15 @@ export default function Finances() {
         <div style={{ background: "#111128", border: "1px solid #2A2A45", borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: "#E8E8F0", marginBottom: 16 }}>Nouvelle transaction</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <select value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value })}
-              style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }}>
+            <select value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value })} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }}>
               <option value="entree">Entrée</option>
               <option value="sortie">Sortie</option>
             </select>
-            <input placeholder="Libellé" value={newTx.libelle} onChange={e => setNewTx({ ...newTx, libelle: e.target.value })}
-              style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
-            <input placeholder="Montant (FCFA)" type="number" value={newTx.montant} onChange={e => setNewTx({ ...newTx, montant: e.target.value })}
-              style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
-            <input placeholder="Date" value={newTx.date} onChange={e => setNewTx({ ...newTx, date: e.target.value })}
-              style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
-            <input placeholder="Catégorie" value={newTx.categorie} onChange={e => setNewTx({ ...newTx, categorie: e.target.value })}
-              style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
-            <select value={newTx.statut} onChange={e => setNewTx({ ...newTx, statut: e.target.value })}
-              style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }}>
+            <input placeholder="Libellé" value={newTx.libelle} onChange={e => setNewTx({ ...newTx, libelle: e.target.value })} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
+            <input placeholder="Montant (FCFA)" type="number" value={newTx.montant} onChange={e => setNewTx({ ...newTx, montant: e.target.value })} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
+            <input placeholder="Date" value={newTx.date} onChange={e => setNewTx({ ...newTx, date: e.target.value })} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
+            <input placeholder="Catégorie" value={newTx.categorie} onChange={e => setNewTx({ ...newTx, categorie: e.target.value })} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
+            <select value={newTx.statut} onChange={e => setNewTx({ ...newTx, statut: e.target.value })} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "10px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }}>
               <option value="encaissé">Encaissé</option>
               <option value="payé">Payé</option>
               <option value="impayé">Impayé</option>
@@ -96,24 +95,19 @@ export default function Finances() {
       </div>
 
       {loading && <div style={{ color: "#6B6B8A", textAlign: "center", padding: 40 }}>Chargement...</div>}
-
       {!loading && (
         <div style={{ background: "#111128", border: "1px solid #1E1E38", borderRadius: 14, overflow: "hidden" }}>
-          {filtered.length === 0 && <div style={{ color: "#3A3A5A", textAlign: "center", padding: 40, fontSize: 14 }}>Aucune transaction — ajoutez-en une !</div>}
+          {filtered.length === 0 && <div style={{ color: "#3A3A5A", textAlign: "center", padding: 40, fontSize: 14 }}>Aucune transaction</div>}
           {filtered.map((t, i) => (
             <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #1A1A30" : "none" }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: t.type === "entree" ? "rgba(74,155,142,0.15)" : "rgba(232,85,85,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
-                {t.type === "entree" ? "↓" : "↑"}
-              </div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: t.type === "entree" ? "rgba(74,155,142,0.15)" : "rgba(232,85,85,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{t.type === "entree" ? "↓" : "↑"}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#E8E8F0" }}>{t.libelle}</div>
                 <div style={{ fontSize: 11, color: "#6B6B8A", marginTop: 2 }}>{t.date} · {t.categorie}</div>
               </div>
               <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: t.type === "entree" ? "#4A9B8E" : "#E85555" }}>
-                    {t.type === "entree" ? "+" : "-"}{t.montant?.toLocaleString()} FCFA
-                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: t.type === "entree" ? "#4A9B8E" : "#E85555" }}>{t.type === "entree" ? "+" : "-"}{t.montant?.toLocaleString()} FCFA</div>
                   <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: t.statut === "impayé" ? "rgba(232,85,85,0.1)" : "rgba(74,155,142,0.1)", color: t.statut === "impayé" ? "#E85555" : "#4A9B8E" }}>{t.statut}</span>
                 </div>
                 <button onClick={() => deleteTx(t.id)} style={{ background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 6, color: "#E85555", fontSize: 11, padding: "4px 8px", cursor: "pointer" }}>✕</button>
