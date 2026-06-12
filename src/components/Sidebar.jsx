@@ -23,7 +23,7 @@ export default function Sidebar({ activeNav, setActiveNav }) {
  return (
    <div style={{ width: collapsed ? 64 : 220, background: "#111128", borderRight: "1px solid #1E1E38", display: "flex", flexDirection: "column", padding: "24px 0", transition: "width 0.25s ease", flexShrink: 0, position: "relative", zIndex: 10, height: "100vh" }}>
      <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #1E1E38", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
-       <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #F5A623, #E8830A)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#0F0F1A", flexShrink: 0 }}>W</div>
+       <img src="/logo.svg" style={{ width: 32, height: 32, flexShrink: 0 }} />
        {!collapsed && <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "0.08em", color: "#E8E8F0", whiteSpace: "nowrap" }}>WOLO</span>}
      </div>
 
