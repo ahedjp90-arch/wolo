@@ -18,7 +18,7 @@ export default function Home() {
     if (saved) setTheme(saved);
   }, []);
 
-  const handleTheme = (t) => {
+  const handleTheme = (t: string) => {
     setTheme(t);
     localStorage.setItem("wolo_theme", t);
   };
