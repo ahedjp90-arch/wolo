@@ -15,9 +15,16 @@ const alerteColors = {
   success: { border: "#4A9B8E", bg: "rgba(74,155,142,0.06)", icon: "✅", label: "Succès" },
 };
 
-export default function Alertes() {
+export default function Alertes({ theme }) {
   const [alertes, setAlertes] = useState(alertesInit);
   const [filtre, setFiltre] = useState("tous");
+
+  const isDark = theme === "dark";
+  const bg = isDark ? "#0F0F1A" : "#F3F4F6";
+  const card = isDark ? "#111128" : "#FFFFFF";
+  const border = isDark ? "#1E1E38" : "#E5E7EB";
+  const text = isDark ? "#E8E8F0" : "#111827";
+  const sub = isDark ? "#6B6B8A" : "#6B7280";
 
   const marquerLu = (id) => setAlertes(alertes.map(a => a.id === id ? { ...a, lu: true } : a));
   const supprimer = (id) => setAlertes(alertes.filter(a => a.id !== id));
@@ -32,40 +39,35 @@ export default function Alertes() {
   const nonLues = alertes.filter(a => !a.lu).length;
 
   return (
-    <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: "#0F0F1A" }}>
-      {/* Header */}
+    <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: bg }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#E8E8F0" }}>Alertes</div>
-          <div style={{ fontSize: 13, color: "#6B6B8A", marginTop: 2 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: text }}>Alertes</div>
+          <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>
             {nonLues > 0 ? `${nonLues} non lue${nonLues > 1 ? "s" : ""}` : "Tout est à jour ✓"}
           </div>
         </div>
         {nonLues > 0 && (
-          <button onClick={toutMarquer} style={{ background: "transparent", border: "1px solid #2A2A45", borderRadius: 8, color: "#6B6B8A", padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>
+          <button onClick={toutMarquer} style={{ background: "transparent", border: `1px solid ${border}`, borderRadius: 8, color: sub, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>
             Tout marquer comme lu
           </button>
         )}
       </div>
 
-      {/* Filtres */}
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[["tous", "Tout"], ["nonlu", "Non lues"], ["warning", "Attention"], ["info", "Info"], ["success", "Succès"]].map(([val, label]) => (
-          <button key={val} onClick={() => setFiltre(val)} style={{ padding: "6px 14px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", background: filtre === val ? "#F5A623" : "#111128", color: filtre === val ? "#0F0F1A" : "#6B6B8A" }}>{label}</button>
+          <button key={val} onClick={() => setFiltre(val)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtre === val ? "#F5A623" : border}`, fontSize: 12, fontWeight: 600, cursor: "pointer", background: filtre === val ? "#F5A623" : card, color: filtre === val ? "#0F0F1A" : sub }}>{label}</button>
         ))}
       </div>
 
-      {/* Liste alertes */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {filtered.length === 0 && (
-          <div style={{ textAlign: "center", color: "#3A3A5A", fontSize: 14, padding: "40px 0" }}>Aucune alerte</div>
-        )}
+        {filtered.length === 0 && <div style={{ textAlign: "center", color: sub, fontSize: 14, padding: "40px 0" }}>Aucune alerte</div>}
         {filtered.map(a => (
-          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderRadius: 12, background: alerteColors[a.type].bg, borderLeft: `4px solid ${alerteColors[a.type].border}`, opacity: a.lu ? 0.6 : 1, transition: "opacity 0.2s" }}>
+          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderRadius: 12, background: alerteColors[a.type].bg, borderLeft: `4px solid ${alerteColors[a.type].border}`, opacity: a.lu ? 0.6 : 1 }}>
             <span style={{ fontSize: 20, flexShrink: 0 }}>{alerteColors[a.type].icon}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, color: "#E8E8F0", fontWeight: a.lu ? 400 : 600, lineHeight: 1.4 }}>{a.message}</div>
-              <div style={{ fontSize: 11, color: "#6B6B8A", marginTop: 4 }}>{a.temps} · {alerteColors[a.type].label}</div>
+              <div style={{ fontSize: 13, color: text, fontWeight: a.lu ? 400 : 600, lineHeight: 1.4 }}>{a.message}</div>
+              <div style={{ fontSize: 11, color: sub, marginTop: 4 }}>{a.temps} · {alerteColors[a.type].label}</div>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
               {!a.lu && (
