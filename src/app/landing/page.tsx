@@ -45,8 +45,8 @@ export default function Landing() {
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <a href="#features" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Fonctionnalités</a>
           <a href="#pricing" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Tarifs</a>
-          <a href="/login" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Connexion</a>
-          <a href="/login" style={{ ...btn, padding: "10px 20px", fontSize: 13, textDecoration: "none" }}>Commencer</a>
+          <a href="/login?mode=signup" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Connexion</a>
+          <a href="/login?mode=signup" style={{ ...btn, padding: "10px 20px", fontSize: 13, textDecoration: "none" }}>Commencer</a>
         </div>
       </nav>
 
@@ -64,7 +64,7 @@ export default function Landing() {
           WOLO centralise tout ce dont vous avez besoin pour piloter votre business — clients, finances, tâches et documents — dans un seul outil.
         </p>
         <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-          <a href="/login" style={{ ...btn, textDecoration: "none", fontSize: 16, padding: "16px 40px" }}>Démarrer gratuitement</a>
+          <a href="/login?mode=signup" style={{ ...btn, textDecoration: "none", fontSize: 16, padding: "16px 40px" }}>Démarrer gratuitement</a>
           <a href="#features" style={{ background: "transparent", border: "1px solid #2A2A45", borderRadius: 10, color: "#E8E8F0", padding: "16px 40px", fontSize: 16, cursor: "pointer", textDecoration: "none" }}>Voir les fonctionnalités</a>
         </div>
         <p style={{ marginTop: 20, fontSize: 13, color: "#4A4A6A" }}>Aucune carte bancaire requise · Accès immédiat</p>
@@ -108,7 +108,7 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-              <a href="/login" style={{ display: "block", textAlign: "center", textDecoration: "none", background: p.popular ? "linear-gradient(135deg, #F5A623, #E8830A)" : "transparent", border: p.popular ? "none" : "1px solid #2A2A45", borderRadius: 10, color: p.popular ? "#0F0F1A" : "#E8E8F0", padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+              <a href="/login?mode=signup" style={{ display: "block", textAlign: "center", textDecoration: "none", background: p.popular ? "linear-gradient(135deg, #F5A623, #E8830A)" : "transparent", border: p.popular ? "none" : "1px solid #2A2A45", borderRadius: 10, color: p.popular ? "#0F0F1A" : "#E8E8F0", padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
                 Commencer
               </a>
             </div>
@@ -142,7 +142,7 @@ export default function Landing() {
         <div style={{ background: "linear-gradient(135deg, rgba(245,166,35,0.1), rgba(124,124,240,0.05))", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 24, padding: "60px 48px", maxWidth: 700, margin: "0 auto" }}>
           <h2 style={{ fontSize: 40, fontWeight: 700, marginBottom: 16 }}>Prêt à piloter votre business ?</h2>
           <p style={{ fontSize: 18, color: "#6B6B8A", marginBottom: 36 }}>Rejoignez les entrepreneurs qui utilisent WOLO pour gérer leur business efficacement.</p>
-          <a href="/login" style={{ ...btn, textDecoration: "none", fontSize: 16, padding: "16px 48px" }}>Démarrer gratuitement</a>
+          <a href="/login?mode=signup" style={{ ...btn, textDecoration: "none", fontSize: 16, padding: "16px 48px" }}>Démarrer gratuitement</a>
           <p style={{ marginTop: 16, fontSize: 13, color: "#4A4A6A" }}>Aucune carte bancaire · Accès immédiat · Annulation à tout moment</p>
         </div>
       </section>
@@ -154,7 +154,7 @@ export default function Landing() {
           <span style={{ fontSize: 16, fontWeight: 700 }}>WOLO</span>
         </div>
         <div style={{ fontSize: 13, color: "#4A4A6A" }}>© 2026 WOLO — Le cerveau de votre entreprise</div>
-        <a href="/login" style={{ fontSize: 13, color: "#6B6B8A", textDecoration: "none" }}>Se connecter</a>
+        <a href="/login?mode=signup" style={{ fontSize: 13, color: "#6B6B8A", textDecoration: "none" }}>Se connecter</a>
       </footer>
 
     </div>

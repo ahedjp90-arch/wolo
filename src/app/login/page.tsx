@@ -3,7 +3,8 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function Login() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const [mode, setMode] = useState<"login" | "signup">(searchParams?.get("mode") === "signup" ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nom, setNom] = useState("");
