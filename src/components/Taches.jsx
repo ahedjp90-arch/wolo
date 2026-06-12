@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 const colonnes = ["À faire", "En cours", "Terminé"];
 const prioriteColors = { haute: "#F5A623", moyenne: "#7C7CF0", basse: "#4A9B8E" };
-const categories = ["CRM", "Finance", "Marketing", "Administratif", "Technique", "Réunion", "Autre"];
+const categories = ["Clients", "Finance", "Marketing", "Administratif", "Technique", "Réunion", "Autre"];
 
 export default function Taches() {
  const [taches, setTaches] = useState([]);
