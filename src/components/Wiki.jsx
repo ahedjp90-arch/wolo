@@ -1,11 +1,6 @@
 "use client";
-import { useState } from "react";
-
-const articlesInit = [
-  { id: 1, titre: "Processus de relance client", categorie: "CRM", contenu: "1. Vérifier le statut du dossier dans le CRM.\n2. Envoyer un SMS ou email de rappel.\n3. Appel téléphonique si pas de réponse sous 48h.\n4. Escalader au responsable si toujours sans réponse après 5 jours.", auteur: "Jhon D.", date: "08 juin 2026" },
-  { id: 2, titre: "Modèle de devis standard", categorie: "Finance", contenu: "Le devis doit inclure : nom du client, date de validité (30 jours), description des prestations, montant HT, TVA (18%), montant TTC, conditions de paiement (50% à la commande, solde à la livraison).", auteur: "Jhon D.", date: "05 juin 2026" },
-  { id: 3, titre: "Onboarding nouveau client", categorie: "CRM", contenu: "1. Créer la fiche client dans le CRM.\n2. Envoyer l'email de bienvenue.\n3. Planifier l'appel de démarrage sous 48h.\n4. Partager les accès et ressources nécessaires.\n5. Définir les jalons du projet.", auteur: "Jhon D.", date: "01 juin 2026" },
-];
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const categorieColors = {
   CRM: { bg: "rgba(124,124,240,0.1)", tx: "#7C7CF0" },
@@ -14,38 +9,50 @@ const categorieColors = {
 };
 
 export default function Wiki() {
-  const [articles, setArticles] = useState(articlesInit);
+  const [articles, setArticles] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
   const [newArticle, setNewArticle] = useState({ titre: "", categorie: "CRM", contenu: "" });
 
-  const addArticle = () => {
+  useEffect(() => { fetchArticles(); }, []);
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("wiki").select("*").order("created_at", { ascending: false });
+    if (!error) setArticles(data || []);
+    setLoading(false);
+  };
+
+  const addArticle = async () => {
     if (!newArticle.titre || !newArticle.contenu) return;
-    setArticles([...articles, { ...newArticle, id: Date.now(), auteur: "Jhon D.", date: "12 juin 2026" }]);
-    setNewArticle({ titre: "", categorie: "CRM", contenu: "" });
-    setShowForm(false);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("wiki").insert([{ ...newArticle, user_id: user.id }]);
+    if (!error) { fetchArticles(); setNewArticle({ titre: "", categorie: "CRM", contenu: "" }); setShowForm(false); }
+  };
+
+  const deleteArticle = async (id) => {
+    await supabase.from("wiki").delete().eq("id", id);
+    setSelected(null);
+    fetchArticles();
   };
 
   const filtered = articles.filter(a =>
-    a.titre.toLowerCase().includes(search.toLowerCase()) ||
-    a.categorie.toLowerCase().includes(search.toLowerCase())
+    a.titre?.toLowerCase().includes(search.toLowerCase()) ||
+    a.categorie?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: "#0F0F1A" }}>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "#E8E8F0" }}>Wiki</div>
           <div style={{ fontSize: 13, color: "#6B6B8A", marginTop: 2 }}>{articles.length} articles</div>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          + Nouvel article
-        </button>
+        <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Nouvel article</button>
       </div>
 
-      {/* Formulaire */}
       {showForm && (
         <div style={{ background: "#111128", border: "1px solid #2A2A45", borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: "#E8E8F0", marginBottom: 16 }}>Nouvel article</div>
@@ -68,39 +75,40 @@ export default function Wiki() {
         </div>
       )}
 
-      {/* Recherche */}
       <input placeholder="Rechercher un article..." value={search} onChange={e => setSearch(e.target.value)}
         style={{ width: "100%", background: "#111128", border: "1px solid #1E1E38", borderRadius: 10, padding: "10px 16px", color: "#E8E8F0", fontSize: 13, outline: "none", marginBottom: 16, boxSizing: "border-box" }} />
 
-      {/* Contenu */}
-      <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 1.5fr" : "repeat(3, 1fr)", gap: 16 }}>
-        {filtered.map(article => (
-          <div key={article.id} onClick={() => setSelected(selected?.id === article.id ? null : article)}
-            style={{ background: "#111128", border: `1px solid ${selected?.id === article.id ? "#F5A623" : "#1E1E38"}`, borderRadius: 14, padding: 20, cursor: "pointer", transition: "border 0.15s" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: categorieColors[article.categorie]?.bg, color: categorieColors[article.categorie]?.tx }}>{article.categorie}</span>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E8F0", marginBottom: 8, lineHeight: 1.4 }}>{article.titre}</div>
-            <div style={{ fontSize: 12, color: "#6B6B8A", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-              {article.contenu}
-            </div>
-            <div style={{ fontSize: 11, color: "#4A4A6A", marginTop: 12 }}>{article.auteur} · {article.date}</div>
-          </div>
-        ))}
+      {loading && <div style={{ color: "#6B6B8A", textAlign: "center", padding: 40 }}>Chargement...</div>}
 
-        {/* Détail article */}
-        {selected && (
-          <div style={{ background: "#111128", border: "1px solid #1E1E38", borderRadius: 14, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: categorieColors[selected.categorie]?.bg, color: categorieColors[selected.categorie]?.tx }}>{selected.categorie}</span>
-              <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", color: "#6B6B8A", fontSize: 18, cursor: "pointer" }}>✕</button>
+      {!loading && (
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 1.5fr" : "repeat(3, 1fr)", gap: 16 }}>
+          {filtered.length === 0 && !selected && (
+            <div style={{ gridColumn: "span 3", color: "#3A3A5A", textAlign: "center", padding: 40, fontSize: 14 }}>Aucun article — créez-en un !</div>
+          )}
+          {filtered.map(article => (
+            <div key={article.id} onClick={() => setSelected(selected?.id === article.id ? null : article)}
+              style={{ background: "#111128", border: `1px solid ${selected?.id === article.id ? "#F5A623" : "#1E1E38"}`, borderRadius: 14, padding: 20, cursor: "pointer" }}>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: categorieColors[article.categorie]?.bg, color: categorieColors[article.categorie]?.tx }}>{article.categorie}</span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E8F0", marginBottom: 8, lineHeight: 1.4 }}>{article.titre}</div>
+              <div style={{ fontSize: 12, color: "#6B6B8A", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{article.contenu}</div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", marginBottom: 16, lineHeight: 1.3 }}>{selected.titre}</div>
-            <div style={{ fontSize: 13, color: "#B8B8D0", lineHeight: 1.8, whiteSpace: "pre-line" }}>{selected.contenu}</div>
-            <div style={{ fontSize: 11, color: "#4A4A6A", marginTop: 20 }}>{selected.auteur} · {selected.date}</div>
-          </div>
-        )}
-      </div>
+          ))}
+
+          {selected && (
+            <div style={{ background: "#111128", border: "1px solid #1E1E38", borderRadius: 14, padding: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: categorieColors[selected.categorie]?.bg, color: categorieColors[selected.categorie]?.tx }}>{selected.categorie}</span>
+                <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", color: "#6B6B8A", fontSize: 18, cursor: "pointer" }}>✕</button>
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#E8E8F0", marginBottom: 16, lineHeight: 1.3 }}>{selected.titre}</div>
+              <div style={{ fontSize: 13, color: "#B8B8D0", lineHeight: 1.8, whiteSpace: "pre-line" }}>{selected.contenu}</div>
+              <button onClick={() => deleteArticle(selected.id)} style={{ marginTop: 20, background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 8, color: "#E85555", padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Supprimer</button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
