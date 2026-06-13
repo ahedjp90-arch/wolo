@@ -12,16 +12,22 @@ import Alertes from "@/components/Alertes";
 export default function Home() {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [theme, setTheme] = useState("dark");
+  const [auth, setAuth] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("wolo_theme");
     if (saved) setTheme(saved);
+    const userId = localStorage.getItem("wolo_user_id");
+    if (!userId) window.location.href = "/landing";
+    else setAuth(true);
   }, []);
 
   const handleTheme = (t) => {
     setTheme(t);
     localStorage.setItem("wolo_theme", t);
   };
+
+  if (!auth) return null;
 
   const isDark = theme === "dark";
   const bg = isDark ? "#0F0F1A" : "#F3F4F6";
