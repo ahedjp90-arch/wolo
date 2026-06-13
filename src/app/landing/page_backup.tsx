@@ -153,7 +153,7 @@ export default function Landing() {
           <div style={{ width: 28, height: 28, background: "linear-gradient(135deg, #F5A623, #E8830A)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#0F0F1A" }}>W</div>
           <span style={{ fontSize: 16, fontWeight: 700 }}>WOLO</span>
         </div>
-        <div style={{ fontSize: 13, color: "#4A4A6A" }}>© 2026 WOLO — Le cerveau de votre entreprise</div>
+        <div style={{ fontSize: 13, color: "#4A4A6A" }}>© 2026 WOLO By Prospera Vision Group — Le cerveau de votre entreprise</div>
         <a href="/login?mode=signup" style={{ fontSize: 13, color: "#6B6B8A", textDecoration: "none" }}>Se connecter</a>
       </footer>
 
