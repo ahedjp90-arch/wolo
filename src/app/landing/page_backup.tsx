@@ -39,7 +39,7 @@ export default function Landing() {
       {/* NAVBAR */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: "16px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", background: scrolled ? "rgba(15,15,26,0.95)" : "transparent", backdropFilter: scrolled ? "blur(10px)" : "none", borderBottom: scrolled ? "1px solid #1E1E38" : "none", transition: "all 0.3s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg, #F5A623, #E8830A)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#0F0F1A" }}>W</div>
+          <img src="/logo.svg" style={{ width: 36, height: 36, borderRadius: 8 }} />
           <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "0.08em" }}>WOLO</span>
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
