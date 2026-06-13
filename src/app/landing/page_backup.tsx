@@ -150,7 +150,7 @@ export default function Landing() {
       {/* FOOTER */}
       <footer style={{ padding: "32px 48px", borderTop: "1px solid #1E1E38", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, background: "linear-gradient(135deg, #F5A623, #E8830A)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#0F0F1A" }}>W</div>
+          <img src="/logo.svg" style={{ width: 36, height: 36, borderRadius: 8 }} />
           <span style={{ fontSize: 16, fontWeight: 700 }}>WOLO</span>
         </div>
         <div style={{ fontSize: 13, color: "#4A4A6A" }}>© 2026 WOLO By Prospera Vision Group — Le cerveau de votre entreprise</div>
