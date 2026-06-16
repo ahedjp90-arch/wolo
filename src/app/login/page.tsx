@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { sendEmail } from "@/lib/sendEmail";
 
 export default function Login() {
   const [mode, setMode] = useState("login");
@@ -33,6 +34,7 @@ export default function Login() {
       if (data.user) {
         localStorage.setItem("wolo_user_id", data.user.id);
         localStorage.setItem("wolo_email", email);
+        await sendEmail("bienvenue", email, { nom });
         window.location.replace("/");
       }
     }
