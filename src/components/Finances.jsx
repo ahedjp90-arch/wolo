@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import ExportPDF from "@/components/ExportPDF";
 
 const categoriesEntree = ["Prestation", "Vente produit", "Acompte client", "Remboursement", "Autre"];
 const categoriesSortie = ["Loyer", "Salaire", "Outils & Abonnements", "Transport", "Fournitures", "Marketing", "Autre"];
@@ -55,7 +56,10 @@ export default function Finances({ theme }) {
           <div style={{ fontSize: 22, fontWeight: 700, color: text }}>Finances</div>
           <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>Juin 2026</div>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Nouvelle transaction</button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <ExportPDF transactions={transactions} theme={theme} />
+          <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Nouvelle transaction</button>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
@@ -119,7 +123,7 @@ export default function Finances({ theme }) {
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {[["tous", "Tout"], ["entree", "💰 Entrées"], ["sortie", "💸 Sorties"]].map(([val, label]) => (
-          <button key={val} onClick={() => setFiltre(val)} style={{ padding: "6px 14px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", background: filtre === val ? "#F5A623" : card, color: filtre === val ? "#0F0F1A" : sub, border: `1px solid ${filtre === val ? "#F5A623" : border}` }}>{label}</button>
+          <button key={val} onClick={() => setFiltre(val)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filtre === val ? "#F5A623" : border}`, fontSize: 12, fontWeight: 600, cursor: "pointer", background: filtre === val ? "#F5A623" : card, color: filtre === val ? "#0F0F1A" : sub }}>{label}</button>
         ))}
       </div>
 
