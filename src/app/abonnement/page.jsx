@@ -2,6 +2,7 @@
 import { useState } from "react";
 
 const plans = [
+  { nom: "Gratuit", prix: 0, desc: "7 jours d'essai", features: ["1 utilisateur", "Tous les modules", "CRM jusqu'à 5 clients", "10 transactions", "Sans carte bancaire"], code: "WOLO_FREE" },
   { nom: "Starter", prix: 5000, desc: "Pour démarrer", features: ["1 utilisateur", "CRM jusqu'à 20 clients", "Finance Tracker", "Tâches illimitées", "Support email"], code: "WOLO_STARTER" },
   { nom: "Business", prix: 15000, desc: "Le plus populaire", features: ["5 utilisateurs", "CRM illimité", "Tous les modules", "Wiki & Alertes", "Support prioritaire"], popular: true, code: "WOLO_BUSINESS" },
   { nom: "Pro", prix: 35000, desc: "Pour les équipes", features: ["Utilisateurs illimités", "Tout Business inclus", "Exports de données", "Intégrations", "Support dédié"], code: "WOLO_PRO" },
@@ -11,6 +12,7 @@ export default function Abonnement() {
   const [loading, setLoading] = useState(null);
 
   const payer = (plan) => {
+    if (plan.prix === 0) { localStorage.setItem("wolo_plan", "FREE"); localStorage.setItem("wolo_trial_end", Date.now() + 7 * 24 * 60 * 60 * 1000); window.location.href = "/"; return; }
     setLoading(plan.code);
     const email = localStorage.getItem("wolo_email") || "client@wolo.com";
     const handler = window.PaystackPop.setup({
@@ -62,7 +64,7 @@ export default function Abonnement() {
               </div>
               <button onClick={() => payer(p)} disabled={loading === p.code}
                 style={{ width: "100%", background: p.popular ? "linear-gradient(135deg, #F5A623, #E8830A)" : "transparent", border: p.popular ? "none" : "1px solid #2A2A45", borderRadius: 10, color: p.popular ? "#0F0F1A" : "#E8E8F0", padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: loading === p.code ? 0.7 : 1 }}>
-                {loading === p.code ? "Chargement..." : `Choisir ${p.nom}`}
+                {loading === p.code ? "Chargement..." : p.prix === 0 ? "Démarrer gratuitement" : `Choisir ${p.nom}`}
               </button>
             </div>
           ))}
