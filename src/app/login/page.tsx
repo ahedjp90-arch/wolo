@@ -1,10 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function Login() {
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  const [mode, setMode] = useState<"login" | "signup">(searchParams?.get("mode") === "signup" ? "signup" : "login");
+  const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nom, setNom] = useState("");
@@ -12,17 +11,30 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "signup") setMode("signup");
+  }, []);
+
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
     if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message);
-      else window.location.href = "/";
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { setError(error.message); setLoading(false); return; }
+      if (data.user) {
+        localStorage.setItem("wolo_user_id", data.user.id);
+        localStorage.setItem("wolo_email", email);
+        window.location.replace("/");
+      }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password, options: { data: { nom, entreprise } } });
-      if (error) setError(error.message);
-      else window.location.href = "/";
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { nom, entreprise } } });
+      if (error) { setError(error.message); setLoading(false); return; }
+      if (data.user) {
+        localStorage.setItem("wolo_user_id", data.user.id);
+        localStorage.setItem("wolo_email", email);
+        window.location.replace("/");
+      }
     }
     setLoading(false);
   };
@@ -31,7 +43,7 @@ export default function Login() {
     <div style={{ minHeight: "100vh", background: "#0F0F1A", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: 400, background: "#111128", border: "1px solid #1E1E38", borderRadius: 16, padding: 40 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
-          <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #F5A623, #E8830A)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#0F0F1A" }}>W</div>
+          <img src="/logo.svg" style={{ width: 36, height: 36, borderRadius: 8 }} />
           <span style={{ fontSize: 22, fontWeight: 700, color: "#E8E8F0", letterSpacing: "0.08em" }}>WOLO</span>
         </div>
         <div style={{ fontSize: 20, fontWeight: 700, color: "#E8E8F0", marginBottom: 6 }}>{mode === "login" ? "Connexion" : "Créer un compte"}</div>
