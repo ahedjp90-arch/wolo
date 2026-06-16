@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 const navItems = [
@@ -13,12 +13,27 @@ const navItems = [
 
 export default function Sidebar({ activeNav, setActiveNav, theme }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState({ nom: "", email: "", initiales: "?" });
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  const fetchUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const nom = session.user.user_metadata?.nom || session.user.email?.split("@")[0] || "Utilisateur";
+      const email = session.user.email || "";
+      const initiales = nom ? nom[0].toUpperCase() : "?";
+      setUser({ nom, email, initiales });
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem("wolo_user_id");
-    window.location.href = "/login";
+    localStorage.clear();
+    window.location.href = "/landing";
   };
 
   return (
@@ -56,12 +71,12 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
         </button>
       </div>
 
-      {/* Utilisateur - cliquable vers profil */}
+      {/* Utilisateur dynamique */}
       <a href="/profil" style={{ padding: "16px 14px 0", borderTop: `1px solid ${isDark ? "#1E1E38" : "#E5E7EB"}`, marginTop: 10, display: "flex", alignItems: "center", gap: 10, overflow: "hidden", textDecoration: "none" }}>
-        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #7C7CF0, #5A5AE8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>JD</div>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #7C7CF0, #5A5AE8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{user.initiales}</div>
         {!collapsed && <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? "#E8E8F0" : "#111827" }}>Mon profil</div>
-          <div style={{ fontSize: 11, color: isDark ? "#6B6B8A" : "#6B7280" }}>Voir & modifier →</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? "#E8E8F0" : "#111827" }}>{user.nom}</div>
+          <div style={{ fontSize: 11, color: isDark ? "#6B6B8A" : "#6B7280" }}>{user.email}</div>
         </div>}
       </a>
 
