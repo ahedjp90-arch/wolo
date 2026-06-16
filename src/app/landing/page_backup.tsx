@@ -45,7 +45,7 @@ export default function Landing() {
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <a href="#features" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Fonctionnalités</a>
           <a href="#pricing" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Tarifs</a>
-          <a href="/login?mode=signup" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Connexion</a>
+          <a href="/login" style={{ color: "#6B6B8A", textDecoration: "none", fontSize: 14 }}>Connexion</a>
           <a href="/login?mode=signup" style={{ ...btn, padding: "10px 20px", fontSize: 13, textDecoration: "none" }}>Commencer</a>
         </div>
       </nav>
