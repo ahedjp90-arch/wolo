@@ -14,6 +14,7 @@ export default function Wiki({ theme }) {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [newArticle, setNewArticle] = useState({ titre: "", categorie: "CRM", contenu: "" });
 
   const isDark = theme === "dark";
@@ -25,25 +26,28 @@ export default function Wiki({ theme }) {
   const input = isDark ? "#0F0F1A" : "#F9FAFB";
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
 
-  useEffect(() => { fetchArticles(); }, []);
+  useEffect(() => {
+    const uid = localStorage.getItem("wolo_user_id");
+    if (uid) { setUserId(uid); fetchArticles(uid); }
+  }, []);
 
-  const fetchArticles = async () => {
+  const fetchArticles = async (uid) => {
     setLoading(true);
-    const { data } = await supabase.from("wiki").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("wiki").select("*").eq("user_id", uid).order("created_at", { ascending: false });
     setArticles(data || []);
     setLoading(false);
   };
 
   const addArticle = async () => {
-    if (!newArticle.titre || !newArticle.contenu) return;
-    const { error } = await supabase.from("wiki").insert([{ ...newArticle }]);
-    if (!error) { fetchArticles(); setNewArticle({ titre: "", categorie: "CRM", contenu: "" }); setShowForm(false); }
+    if (!newArticle.titre || !newArticle.contenu || !userId) return;
+    const { error } = await supabase.from("wiki").insert([{ ...newArticle, user_id: userId }]);
+    if (!error) { fetchArticles(userId); setNewArticle({ titre: "", categorie: "CRM", contenu: "" }); setShowForm(false); }
   };
 
   const deleteArticle = async (id) => {
-    await supabase.from("wiki").delete().eq("id", id);
+    await supabase.from("wiki").delete().eq("id", id).eq("user_id", userId);
     setSelected(null);
-    fetchArticles();
+    fetchArticles(userId);
   };
 
   const filtered = articles.filter(a =>

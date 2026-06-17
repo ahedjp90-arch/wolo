@@ -11,6 +11,7 @@ export default function Finances({ theme }) {
   const [showForm, setShowForm] = useState(false);
   const [filtre, setFiltre] = useState("tous");
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [newTx, setNewTx] = useState({ type: "entree", libelle: "", montant: "", date: "", categorie: "Prestation", statut: "encaissé" });
 
   const isDark = theme === "dark";
@@ -22,24 +23,27 @@ export default function Finances({ theme }) {
   const input = isDark ? "#0F0F1A" : "#F9FAFB";
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
 
-  useEffect(() => { fetchTransactions(); }, []);
+  useEffect(() => {
+    const uid = localStorage.getItem("wolo_user_id");
+    if (uid) { setUserId(uid); fetchTransactions(uid); }
+  }, []);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (uid) => {
     setLoading(true);
-    const { data } = await supabase.from("transactions").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false });
     setTransactions(data || []);
     setLoading(false);
   };
 
   const addTx = async () => {
-    if (!newTx.libelle || !newTx.montant) return;
-    const { error } = await supabase.from("transactions").insert([{ ...newTx, montant: parseInt(newTx.montant) }]);
-    if (!error) { fetchTransactions(); setNewTx({ type: "entree", libelle: "", montant: "", date: "", categorie: "Prestation", statut: "encaissé" }); setShowForm(false); }
+    if (!newTx.libelle || !newTx.montant || !userId) return;
+    const { error } = await supabase.from("transactions").insert([{ ...newTx, user_id: userId, montant: parseInt(newTx.montant) }]);
+    if (!error) { fetchTransactions(userId); setNewTx({ type: "entree", libelle: "", montant: "", date: "", categorie: "Prestation", statut: "encaissé" }); setShowForm(false); }
   };
 
   const deleteTx = async (id) => {
-    await supabase.from("transactions").delete().eq("id", id);
-    fetchTransactions();
+    await supabase.from("transactions").delete().eq("id", id).eq("user_id", userId);
+    fetchTransactions(userId);
   };
 
   const totalEntrees = transactions.filter(t => t.type === "entree").reduce((s, t) => s + t.montant, 0);
@@ -54,7 +58,7 @@ export default function Finances({ theme }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 700, color: text }}>Finances</div>
-          <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>Juin 2026</div>
+          <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>Aperçu financier</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <ExportPDF transactions={transactions} theme={theme} />

@@ -10,6 +10,7 @@ export default function Taches({ theme }) {
   const [taches, setTaches] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [newTache, setNewTache] = useState({ titre: "", priorite: "moyenne", categorie: "Clients", colonne: "À faire" });
 
   const isDark = theme === "dark";
@@ -22,29 +23,32 @@ export default function Taches({ theme }) {
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
   const taskBg = isDark ? "#0F0F1A" : "#F9FAFB";
 
-  useEffect(() => { fetchTaches(); }, []);
+  useEffect(() => {
+    const uid = localStorage.getItem("wolo_user_id");
+    if (uid) { setUserId(uid); fetchTaches(uid); }
+  }, []);
 
-  const fetchTaches = async () => {
+  const fetchTaches = async (uid) => {
     setLoading(true);
-    const { data } = await supabase.from("taches").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("taches").select("*").eq("user_id", uid).order("created_at", { ascending: false });
     setTaches(data || []);
     setLoading(false);
   };
 
   const addTache = async () => {
-    if (!newTache.titre) return;
-    const { error } = await supabase.from("taches").insert([{ ...newTache }]);
-    if (!error) { fetchTaches(); setNewTache({ titre: "", priorite: "moyenne", categorie: "Clients", colonne: "À faire" }); setShowForm(false); }
+    if (!newTache.titre || !userId) return;
+    const { error } = await supabase.from("taches").insert([{ ...newTache, user_id: userId }]);
+    if (!error) { fetchTaches(userId); setNewTache({ titre: "", priorite: "moyenne", categorie: "Clients", colonne: "À faire" }); setShowForm(false); }
   };
 
   const moveTask = async (id, newColonne) => {
-    await supabase.from("taches").update({ colonne: newColonne }).eq("id", id);
-    fetchTaches();
+    await supabase.from("taches").update({ colonne: newColonne }).eq("id", id).eq("user_id", userId);
+    fetchTaches(userId);
   };
 
   const deleteTask = async (id) => {
-    await supabase.from("taches").delete().eq("id", id);
-    fetchTaches();
+    await supabase.from("taches").delete().eq("id", id).eq("user_id", userId);
+    fetchTaches(userId);
   };
 
   const inputStyle = { background: input, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "10px 14px", color: text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
