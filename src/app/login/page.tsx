@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { sendEmail } from "@/lib/sendEmail";
 
 export default function Login() {
   const [mode, setMode] = useState("login");
@@ -11,6 +10,7 @@ export default function Login() {
   const [entreprise, setEntreprise] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -20,6 +20,8 @@ export default function Login() {
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
+    setSuccess("");
+
     if (mode === "login") {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) { setError(error.message); setLoading(false); return; }
@@ -34,8 +36,12 @@ export default function Login() {
       if (data.user) {
         localStorage.setItem("wolo_user_id", data.user.id);
         localStorage.setItem("wolo_email", email);
-        await sendEmail("bienvenue", email, { nom });
-        window.location.replace("/");
+        await fetch("/api/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: data.user.id, email, nom }),
+        });
+        setSuccess("Un email de confirmation a été envoyé à " + email + ". Vérifiez votre boîte mail.");
       }
     }
     setLoading(false);
@@ -61,9 +67,12 @@ export default function Login() {
           <input placeholder="Mot de passe" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "12px 14px", color: "#E8E8F0", fontSize: 13, outline: "none" }} />
         </div>
         {error && <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(232,85,85,0.1)", borderRadius: 8, fontSize: 12, color: "#E85555" }}>{error}</div>}
-        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", marginTop: 20, background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
-          {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
-        </button>
+        {success && <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(74,155,142,0.1)", borderRadius: 8, fontSize: 12, color: "#4A9B8E" }}>{success}</div>}
+        {!success && (
+          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", marginTop: 20, background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+          </button>
+        )}
         <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#6B6B8A" }}>
           {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
           <span onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ color: "#F5A623", cursor: "pointer", fontWeight: 600 }}>
