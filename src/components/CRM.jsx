@@ -15,6 +15,7 @@ export default function CRM({ theme }) {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
   const [newClient, setNewClient] = useState({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" });
 
   const isDark = theme === "dark";
@@ -26,25 +27,28 @@ export default function CRM({ theme }) {
   const input = isDark ? "#0F0F1A" : "#F9FAFB";
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
 
-  useEffect(() => { fetchClients(); }, []);
+  useEffect(() => {
+    const uid = localStorage.getItem("wolo_user_id");
+    if (uid) { setUserId(uid); fetchClients(uid); }
+  }, []);
 
-  const fetchClients = async () => {
+  const fetchClients = async (uid) => {
     setLoading(true);
-    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("clients").select("*").eq("user_id", uid).order("created_at", { ascending: false });
     setClients(data || []);
     setLoading(false);
   };
 
   const addClient = async () => {
-    if (!newClient.nom) return;
-    const { error } = await supabase.from("clients").insert([{ ...newClient }]);
-    if (!error) { fetchClients(); setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" }); setShowForm(false); }
+    if (!newClient.nom || !userId) return;
+    const { error } = await supabase.from("clients").insert([{ ...newClient, user_id: userId }]);
+    if (!error) { fetchClients(userId); setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" }); setShowForm(false); }
   };
 
   const deleteClient = async (id) => {
-    await supabase.from("clients").delete().eq("id", id);
+    await supabase.from("clients").delete().eq("id", id).eq("user_id", userId);
     setSelected(null);
-    fetchClients();
+    fetchClients(userId);
   };
 
   const filtered = clients.filter(c =>
