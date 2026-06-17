@@ -7,7 +7,6 @@ export default function Dashboard({ theme }) {
   const [transactions, setTransactions] = useState([]);
   const [clients, setClients] = useState([]);
   const [taches, setTaches] = useState([]);
-  const [alertes, setAlertes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isDark = theme === "dark";
@@ -19,15 +18,16 @@ export default function Dashboard({ theme }) {
   const divider = isDark ? "#1A1A30" : "#F3F4F6";
 
   useEffect(() => {
-    fetchData();
+    const uid = localStorage.getItem("wolo_user_id");
+    if (uid) fetchData(uid);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (uid) => {
     setLoading(true);
     const [txRes, clientRes, tacheRes] = await Promise.all([
-      supabase.from("transactions").select("*").order("created_at", { ascending: false }),
-      supabase.from("clients").select("*").order("created_at", { ascending: false }),
-      supabase.from("taches").select("*").order("created_at", { ascending: false }),
+      supabase.from("transactions").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+      supabase.from("clients").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
+      supabase.from("taches").select("*").eq("user_id", uid).order("created_at", { ascending: false }),
     ]);
     setTransactions(txRes.data || []);
     setClients(clientRes.data || []);
@@ -37,26 +37,20 @@ export default function Dashboard({ theme }) {
 
   const totalEntrees = transactions.filter(t => t.type === "entree").reduce((s, t) => s + t.montant, 0);
   const totalSorties = transactions.filter(t => t.type === "sortie").reduce((s, t) => s + t.montant, 0);
-  const tachesEnRetard = taches.filter(t => t.colonne === "À faire").length;
+  const tachesAFaire = taches.filter(t => t.colonne === "À faire").length;
 
   const kpis = [
-    { label: "Revenus ce mois", valeur: totalEntrees.toLocaleString(), unite: "FCFA", variation: "+", positif: true },
-    { label: "Dépenses", valeur: totalSorties.toLocaleString(), unite: "FCFA", variation: "-", positif: false },
-    { label: "Clients actifs", valeur: clients.length.toString(), unite: "clients", variation: "", positif: true },
-    { label: "Tâches à faire", valeur: tachesEnRetard.toString(), unite: "tâches", variation: "", positif: tachesEnRetard === 0 },
+    { label: "Revenus ce mois", valeur: totalEntrees.toLocaleString(), unite: "FCFA", positif: true },
+    { label: "Dépenses", valeur: totalSorties.toLocaleString(), unite: "FCFA", positif: false },
+    { label: "Clients actifs", valeur: clients.length.toString(), unite: "clients", positif: true },
+    { label: "Tâches à faire", valeur: tachesAFaire.toString(), unite: "tâches", positif: tachesAFaire === 0 },
   ];
 
-  const revenueData = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun"].map((mois, i) => ({
+  const revenueData = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun"].map((mois) => ({
     mois,
-    revenus: transactions.filter(t => t.type === "entree").reduce((s, t) => s + t.montant, 0) / 6,
-    depenses: transactions.filter(t => t.type === "sortie").reduce((s, t) => s + t.montant, 0) / 6,
+    revenus: totalEntrees / 6,
+    depenses: totalSorties / 6,
   }));
-
-  const alerteColors = {
-    warning: { border: "#E85555", bg: "rgba(232,85,85,0.06)" },
-    info: { border: "#7C7CF0", bg: "rgba(124,124,240,0.06)" },
-    success: { border: "#4A9B8E", bg: "rgba(74,155,142,0.06)" },
-  };
 
   const statutColors = {
     "Relance due": { bg: "rgba(232,85,85,0.1)", tx: "#E85555" },
@@ -71,10 +65,9 @@ export default function Dashboard({ theme }) {
     <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: bg }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: text }}>Bonjour 👋</div>
-        <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>{tachesEnRetard} tâches à faire aujourd'hui</div>
+        <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>{tachesAFaire} tâches à faire aujourd'hui</div>
       </div>
 
-      {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <div key={i} style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "20px 22px" }}>
@@ -87,7 +80,6 @@ export default function Dashboard({ theme }) {
         ))}
       </div>
 
-      {/* Graphique + Tâches */}
       <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20, marginBottom: 24 }}>
         <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "22px 24px" }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 4 }}>Revenus & Dépenses</div>
@@ -121,7 +113,7 @@ export default function Dashboard({ theme }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {taches.slice(0, 5).map(task => (
-              <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: task.colonne === "Terminé" ? "rgba(74,155,142,0.06)" : isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px solid ${border}` }}>
+              <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", border: `1px solid ${border}` }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: task.priorite === "haute" ? "#F5A623" : task.priorite === "moyenne" ? "#7C7CF0" : "#4A9B8E", flexShrink: 0 }} />
                 <div style={{ flex: 1, fontSize: 13, color: task.colonne === "Terminé" ? sub : text, textDecoration: task.colonne === "Terminé" ? "line-through" : "none" }}>{task.titre}</div>
                 <span style={{ fontSize: 10, color: sub }}>{task.colonne}</span>
@@ -132,7 +124,6 @@ export default function Dashboard({ theme }) {
         </div>
       </div>
 
-      {/* Clients + Transactions récentes */}
       <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20 }}>
         <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "22px 24px" }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 16 }}>Clients récents</div>
@@ -152,7 +143,7 @@ export default function Dashboard({ theme }) {
         <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "22px 24px" }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 16 }}>Transactions récentes</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {transactions.slice(0, 4).map((t, i) => (
+            {transactions.slice(0, 4).map((t) => (
               <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: t.type === "entree" ? "rgba(74,155,142,0.15)" : "rgba(232,85,85,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{t.type === "entree" ? "↓" : "↑"}</div>
                 <div style={{ flex: 1 }}>
