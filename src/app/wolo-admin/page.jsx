@@ -106,7 +106,7 @@ export default function WoloAdmin() {
       date: new Date().toISOString()
     }];
 
-    await supabase.from("tickets").update({ messages, reponse, statut: "Resolu" }).eq("id", ticket.id);
+    await supabase.from("tickets").update({ messages, reponse, statut: "Resolu", lu_client: false }).eq("id", ticket.id);
 
     await fetch("/api/email", {
       method: "POST",
