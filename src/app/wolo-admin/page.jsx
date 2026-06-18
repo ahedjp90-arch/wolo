@@ -15,7 +15,8 @@ export default function WoloAdmin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const ADMIN_PASSWORD = "WoloAdmin2026!";
+  const ADMIN_PASSWORD = "dygrew-wIpsu1-mehfif"
+
 
   const handleLogin = () => {
     if (password === ADMIN_PASSWORD) {
