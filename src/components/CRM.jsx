@@ -2,6 +2,15 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
+const secteurs = [
+  "Commerce & Distribution", "Restauration & Alimentation", "BTP & Construction",
+  "Transport & Logistique", "Informatique & Tech", "Santé & Pharmacie",
+  "Éducation & Formation", "Agriculture & Élevage", "Mode & Textile",
+  "Beauté & Cosmétiques", "Immobilier", "Finance & Assurance",
+  "Hôtellerie & Tourisme", "Médias & Communication", "Énergie & Environnement",
+  "Industrie & Manufacture", "ONG & Associations", "Services aux entreprises", "Autre"
+];
+
 const statutColors = {
   "Relance due": { bg: "rgba(232,85,85,0.1)", tx: "#E85555" },
   "Négociation": { bg: "rgba(245,166,35,0.1)", tx: "#F5A623" },
@@ -26,6 +35,7 @@ export default function CRM({ theme }) {
   const sub = isDark ? "#6B6B8A" : "#6B7280";
   const input = isDark ? "#0F0F1A" : "#F9FAFB";
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
+  const inputStyle = { background: input, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "10px 14px", color: text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
 
   useEffect(() => {
     const uid = localStorage.getItem("wolo_user_id");
@@ -42,7 +52,11 @@ export default function CRM({ theme }) {
   const addClient = async () => {
     if (!newClient.nom || !userId) return;
     const { error } = await supabase.from("clients").insert([{ ...newClient, user_id: userId }]);
-    if (!error) { fetchClients(userId); setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" }); setShowForm(false); }
+    if (!error) {
+      fetchClients(userId);
+      setNewClient({ nom: "", contact: "", telephone: "", email: "", secteur: "", statut: "Prospect", valeur: "", pipeline: "Premier contact", notes: "" });
+      setShowForm(false);
+    }
   };
 
   const deleteClient = async (id) => {
@@ -55,8 +69,6 @@ export default function CRM({ theme }) {
     c.nom?.toLowerCase().includes(search.toLowerCase()) ||
     c.contact?.toLowerCase().includes(search.toLowerCase())
   );
-
-  const inputStyle = { background: input, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "10px 14px", color: text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
 
   return (
     <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: bg }}>
@@ -72,7 +84,28 @@ export default function CRM({ theme }) {
         <div style={{ background: card, border: `1px solid ${inputBorder}`, borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 16 }}>Nouveau client</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            
+            <input placeholder="Nom entreprise" value={newClient.nom} onChange={e => setNewClient({ ...newClient, nom: e.target.value })} style={inputStyle} />
+            <input placeholder="Nom contact" value={newClient.contact} onChange={e => setNewClient({ ...newClient, contact: e.target.value })} style={inputStyle} />
+            <input placeholder="Téléphone" value={newClient.telephone} onChange={e => setNewClient({ ...newClient, telephone: e.target.value })} style={inputStyle} />
+            <input placeholder="Email" value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} style={inputStyle} />
+            <select value={newClient.secteur} onChange={e => setNewClient({ ...newClient, secteur: e.target.value })} style={inputStyle}>
+              <option value="">Choisir un secteur</option>
+              {secteurs.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <input placeholder="Valeur estimée (FCFA)" value={newClient.valeur} onChange={e => setNewClient({ ...newClient, valeur: e.target.value })} style={inputStyle} />
+            <select value={newClient.statut} onChange={e => setNewClient({ ...newClient, statut: e.target.value })} style={inputStyle}>
+              <option value="Prospect">Prospect</option>
+              <option value="Négociation">Négociation</option>
+              <option value="Gagné">Gagné</option>
+              <option value="Relance due">Relance due</option>
+            </select>
+            <select value={newClient.pipeline} onChange={e => setNewClient({ ...newClient, pipeline: e.target.value })} style={inputStyle}>
+              <option value="Premier contact">Premier contact</option>
+              <option value="Proposition envoyée">Proposition envoyée</option>
+              <option value="En négociation">En négociation</option>
+              <option value="Contrat signé">Contrat signé</option>
+              <option value="Perdu">Perdu</option>
+            </select>
           </div>
           <textarea placeholder="Notes..." value={newClient.notes} onChange={e => setNewClient({ ...newClient, notes: e.target.value })}
             style={{ ...inputStyle, marginTop: 12, resize: "vertical", minHeight: 80 }} />
