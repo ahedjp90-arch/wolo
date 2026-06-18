@@ -22,7 +22,7 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
   useEffect(() => {
     fetchUser();
     checkTickets();
-    const interval = setInterval(checkTickets, 30000);
+    const interval = setInterval(checkTickets, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -39,14 +39,8 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
   const checkTickets = async () => {
     const uid = localStorage.getItem("wolo_user_id");
     if (!uid) return;
-    const { data } = await supabase.from("tickets").select("messages, lu_client").eq("user_id", uid);
-    if (!data) return;
-    const nonLus = data.filter(t => {
-      const messages = t.messages || [];
-      const dernierMessage = messages[messages.length - 1];
-      return dernierMessage && dernierMessage.auteur === "admin" && !t.lu_client;
-    }).length;
-    setTicketsNonLus(nonLus);
+    const { data } = await supabase.from("tickets").select("id, lu_client").eq("user_id", uid).eq("lu_client", false);
+    setTicketsNonLus((data || []).length);
   };
 
   const handleLogout = async () => {
@@ -55,12 +49,14 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
     window.location.href = "/landing";
   };
 
-  const handleNav = (id) => {
+  const handleNav = async (id) => {
     setActiveNav(id);
     if (id === "support") {
       const uid = localStorage.getItem("wolo_user_id");
-      if (uid) supabase.from("tickets").update({ lu_client: true }).eq("user_id", uid);
-      setTicketsNonLus(0);
+      if (uid) {
+        await supabase.from("tickets").update({ lu_client: true }).eq("user_id", uid).eq("lu_client", false);
+        setTicketsNonLus(0);
+      }
     }
   };
 
@@ -74,11 +70,11 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
 
       <nav style={{ flex: 1, padding: "0 10px", overflowY: "auto" }}>
         {navItems.map((item) => (
-          <button key={item.id} onClick={() => handleNav(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 12px", marginBottom: 4, background: activeNav === item.id ? "rgba(245,166,35,0.1)" : "transparent", border: "none", borderRadius: 10, cursor: "pointer", color: activeNav === item.id ? "#F5A623" : isDark ? "#6B6B8A" : "#6B7280", fontSize: 14, fontWeight: activeNav === item.id ? 600 : 400, textAlign: "left", borderLeft: activeNav === item.id ? "2px solid #F5A623" : "2px solid transparent", overflow: "hidden", whiteSpace: "nowrap", position: "relative" }}>
+          <button key={item.id} onClick={() => handleNav(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 12px", marginBottom: 4, background: activeNav === item.id ? "rgba(245,166,35,0.1)" : "transparent", border: "none", borderRadius: 10, cursor: "pointer", color: activeNav === item.id ? "#F5A623" : isDark ? "#6B6B8A" : "#6B7280", fontSize: 14, fontWeight: activeNav === item.id ? 600 : 400, textAlign: "left", borderLeft: activeNav === item.id ? "2px solid #F5A623" : "2px solid transparent", overflow: "hidden", whiteSpace: "nowrap" }}>
             <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
             {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
             {item.id === "support" && ticketsNonLus > 0 && (
-              <span style={{ background: "#E85555", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 10, flexShrink: 0 }}>{ticketsNonLus}</span>
+              <span style={{ background: "#E85555", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 10, minWidth: 18, textAlign: "center", flexShrink: 0 }}>{ticketsNonLus}</span>
             )}
           </button>
         ))}
