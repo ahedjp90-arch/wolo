@@ -28,6 +28,7 @@ export default function Login() {
       if (data.user) {
         localStorage.setItem("wolo_user_id", data.user.id);
         localStorage.setItem("wolo_email", email);
+        localStorage.setItem("wolo_nom", data.user.user_metadata?.nom || email.split("@")[0]);
         window.location.replace("/");
       }
     } else {
@@ -36,12 +37,13 @@ export default function Login() {
       if (data.user) {
         localStorage.setItem("wolo_user_id", data.user.id);
         localStorage.setItem("wolo_email", email);
+        localStorage.setItem("wolo_nom", nom || email.split("@")[0]);
         await fetch("/api/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: data.user.id, email, nom }),
         });
-        setSuccess("Un email de confirmation a été envoyé à " + email + ". Vérifiez votre boîte mail.");
+        setSuccess("Un email de confirmation a ete envoye a " + email);
       }
     }
     setLoading(false);
@@ -54,8 +56,8 @@ export default function Login() {
           <img src="/logo.svg" style={{ width: 36, height: 36, borderRadius: 8 }} />
           <span style={{ fontSize: 22, fontWeight: 700, color: "#E8E8F0", letterSpacing: "0.08em" }}>WOLO</span>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#E8E8F0", marginBottom: 6 }}>{mode === "login" ? "Connexion" : "Créer un compte"}</div>
-        <div style={{ fontSize: 13, color: "#6B6B8A", marginBottom: 28 }}>{mode === "login" ? "Accédez à votre Business OS" : "Démarrez gratuitement"}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#E8E8F0", marginBottom: 6 }}>{mode === "login" ? "Connexion" : "Creer un compte"}</div>
+        <div style={{ fontSize: 13, color: "#6B6B8A", marginBottom: 28 }}>{mode === "login" ? "Accedez a votre Business OS" : "Demarrez gratuitement"}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {mode === "signup" && (
             <>
@@ -70,11 +72,11 @@ export default function Login() {
         {success && <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(74,155,142,0.1)", borderRadius: 8, fontSize: 12, color: "#4A9B8E" }}>{success}</div>}
         {!success && (
           <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", marginTop: 20, background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
-            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Creer mon compte"}
           </button>
         )}
         <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#6B6B8A" }}>
-          {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
+          {mode === "login" ? "Pas encore de compte ? " : "Deja un compte ? "}
           <span onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ color: "#F5A623", cursor: "pointer", fontWeight: 600 }}>
             {mode === "login" ? "S'inscrire" : "Se connecter"}
           </span>
