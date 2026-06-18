@@ -1,7 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bzczatlskreuymwibvvc.supabase.co", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function WoloAdmin() {
   const [users, setUsers] = useState([]);
@@ -20,7 +19,52 @@ export default function WoloAdmin() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("wolo_theme") || "dark";
     setTheme(savedTheme);
+    // Verifier session admin sauvegardee
+    const adminAuth = localStorage.getItem("wolo_admin_auth");
+    const adminTime = localStorage.getItem("wolo_admin_time");
+    if (adminAuth === "true" && adminTime) {
+      const elapsed = Date.now() - parseInt(adminTime);
+      if (elapsed < 60 * 60 * 1000) { // 1h
+        setAuth(true);
+        fetchData();
+        resetTimer();
+      } else {
+        localStorage.removeItem("wolo_admin_auth");
+        localStorage.removeItem("wolo_admin_time");
+      }
+    }
   }, []);
+
+  // Timer inactivite
+  useEffect(() => {
+    if (!auth) return;
+    const events = ["mousedown", "keydown", "scroll", "touchstart"];
+    const reset = () => resetTimer();
+    events.forEach(e => window.addEventListener(e, reset));
+    return () => events.forEach(e => window.removeEventListener(e, reset));
+  }, [auth]);
+
+  const resetTimer = () => {
+    localStorage.setItem("wolo_admin_time", Date.now().toString());
+  };
+
+  const handleLogin = () => {
+    if (password === "dygrew-wIpsu1-mehfif") {
+      localStorage.setItem("wolo_admin_auth", "true");
+      localStorage.setItem("wolo_admin_time", Date.now().toString());
+      setAuth(true);
+      fetchData();
+    } else {
+      setError("Mot de passe incorrect");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("wolo_admin_auth");
+    localStorage.removeItem("wolo_admin_time");
+    setAuth(false);
+    setPassword("");
+  };
 
   const isDark = theme === "dark";
   const bg = isDark ? "#0F0F1A" : "#F3F4F6";
@@ -45,15 +89,6 @@ export default function WoloAdmin() {
     "Normale": { bg: "rgba(124,124,240,0.1)", tx: "#7C7CF0" },
     "Haute": { bg: "rgba(245,166,35,0.1)", tx: "#F5A623" },
     "Urgente": { bg: "rgba(232,85,85,0.1)", tx: "#E85555" },
-  };
-
-  const handleLogin = () => {
-    if (password === "dygrew-wIpsu1-mehfif") {
-      setAuth(true);
-      fetchData();
-    } else {
-      setError("Mot de passe incorrect");
-    }
   };
 
   const fetchData = async () => {
@@ -101,7 +136,6 @@ export default function WoloAdmin() {
     if (!reponse) return;
     setSending(true);
 
-    // Recharger le ticket depuis Supabase pour avoir les messages a jour
     const { data: ticketFrais } = await supabase.from("tickets").select("*").eq("id", ticket.id).single();
     const messagesActuels = ticketFrais?.messages || [];
 
@@ -119,7 +153,6 @@ export default function WoloAdmin() {
     }).eq("id", ticket.id);
 
     if (error) {
-      console.error("Erreur update ticket:", error);
       alert("Erreur: " + error.message);
       setSending(false);
       return;
@@ -187,6 +220,7 @@ export default function WoloAdmin() {
             <button onClick={() => setTheme("light")} style={{ background: theme === "light" ? "#F5A623" : "transparent", border: `1px solid ${border}`, borderRadius: 6, color: theme === "light" ? "#0F0F1A" : sub, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>Clair</button>
             <button onClick={() => setTheme("dark")} style={{ background: theme === "dark" ? "#F5A623" : "transparent", border: `1px solid ${border}`, borderRadius: 6, color: theme === "dark" ? "#0F0F1A" : sub, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>Sombre</button>
             <button onClick={fetchData} style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.3)", borderRadius: 8, color: "#F5A623", padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Actualiser</button>
+            <button onClick={handleLogout} style={{ background: "rgba(232,85,85,0.1)", border: "1px solid rgba(232,85,85,0.3)", borderRadius: 8, color: "#E85555", padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Deconnexion</button>
           </div>
         </div>
 
