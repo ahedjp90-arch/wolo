@@ -72,9 +72,7 @@ export default function CRM({ theme }) {
         <div style={{ background: card, border: `1px solid ${inputBorder}`, borderRadius: 14, padding: 24, marginBottom: 24 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 16 }}>Nouveau client</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {[["nom", "Nom entreprise"], ["contact", "Nom contact"], ["telephone", "Téléphone"], ["email", "Email"], ["secteur", "Secteur"], ["valeur", "Valeur estimée (FCFA)"]].map(([key, placeholder]) => (
-              <input key={key} placeholder={placeholder} value={newClient[key]} onChange={e => setNewClient({ ...newClient, [key]: e.target.value })} style={inputStyle} />
-            ))}
+            
           </div>
           <textarea placeholder="Notes..." value={newClient.notes} onChange={e => setNewClient({ ...newClient, notes: e.target.value })}
             style={{ ...inputStyle, marginTop: 12, resize: "vertical", minHeight: 80 }} />
