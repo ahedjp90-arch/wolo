@@ -100,13 +100,29 @@ export default function WoloAdmin() {
     if (!reponse) return;
     setSending(true);
 
-    const messages = [...(ticket.messages || []), {
+    // Recharger le ticket depuis Supabase pour avoir les messages a jour
+    const { data: ticketFrais } = await supabase.from("tickets").select("*").eq("id", ticket.id).single();
+    const messagesActuels = ticketFrais?.messages || [];
+
+    const nouveauxMessages = [...messagesActuels, {
       auteur: "admin",
       texte: reponse,
       date: new Date().toISOString()
     }];
 
-    await supabase.from("tickets").update({ messages, reponse, statut: "Resolu", lu_client: false }).eq("id", ticket.id);
+    const { error } = await supabase.from("tickets").update({
+      messages: nouveauxMessages,
+      reponse: reponse,
+      statut: "Resolu",
+      lu_client: false
+    }).eq("id", ticket.id);
+
+    if (error) {
+      console.error("Erreur update ticket:", error);
+      alert("Erreur: " + error.message);
+      setSending(false);
+      return;
+    }
 
     await fetch("/api/email", {
       method: "POST",
@@ -119,7 +135,7 @@ export default function WoloAdmin() {
     });
 
     setReponse("");
-    setSelectedTicket({ ...ticket, messages, statut: "Resolu" });
+    setSelectedTicket({ ...ticket, messages: nouveauxMessages, statut: "Resolu" });
     fetchData();
     setSending(false);
     alert("Reponse envoyee !");
@@ -278,13 +294,12 @@ export default function WoloAdmin() {
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div style={{ flex: 1, overflowY: "auto", maxHeight: 320, display: "flex", flexDirection: "column", gap: 10, marginBottom: 16, padding: "4px 0" }}>
+                <div style={{ flex: 1, overflowY: "auto", maxHeight: 320, display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
                   {(selectedTicket.messages || []).map((msg, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: msg.auteur === "admin" ? "flex-end" : "flex-start" }}>
                       <div style={{ maxWidth: "80%", background: msg.auteur === "admin" ? "rgba(74,155,142,0.1)" : "rgba(245,166,35,0.1)", border: `1px solid ${msg.auteur === "admin" ? "rgba(74,155,142,0.2)" : "rgba(245,166,35,0.2)"}`, borderRadius: 12, padding: "10px 14px" }}>
                         <div style={{ fontSize: 11, color: msg.auteur === "admin" ? "#4A9B8E" : "#F5A623", fontWeight: 600, marginBottom: 4 }}>
-                          {msg.auteur === "admin" ? "Vous (Admin)" : "Client"}
+                          {msg.auteur === "admin" ? "Equipe WOLO" : "Client"}
                         </div>
                         <div style={{ fontSize: 13, color: text, lineHeight: 1.5 }}>{msg.texte}</div>
                         <div style={{ fontSize: 10, color: sub, marginTop: 6 }}>{new Date(msg.date).toLocaleString("fr-FR")}</div>
@@ -296,7 +311,6 @@ export default function WoloAdmin() {
                   )}
                 </div>
 
-                {/* Reponse */}
                 <textarea placeholder="Votre reponse au client..." value={reponse} onChange={e => setReponse(e.target.value)}
                   style={{ ...inputStyle, resize: "vertical", minHeight: 80, marginBottom: 12 }} />
                 <button onClick={() => repondreTicket(selectedTicket)} disabled={sending}
@@ -307,7 +321,6 @@ export default function WoloAdmin() {
             )}
           </div>
         )}
-
       </div>
     </div>
   );
