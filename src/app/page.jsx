@@ -8,6 +8,7 @@ import Finances from "@/components/Finances";
 import Taches from "@/components/Taches";
 import Wiki from "@/components/Wiki";
 import Alertes from "@/components/Alertes";
+import Facturation from "@/components/Facturation";
 
 export default function Home() {
   const [activeNav, setActiveNav] = useState("dashboard");
@@ -50,6 +51,7 @@ export default function Home() {
         {activeNav === "taches" && <Taches theme={theme} />}
         {activeNav === "wiki" && <Wiki theme={theme} />}
         {activeNav === "alertes" && <Alertes theme={theme} />}
+        {activeNav === "facturation" && <Facturation theme={theme} />}
       </div>
     </div>
   );
