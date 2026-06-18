@@ -10,6 +10,9 @@ export default function Facturation({ theme }) {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const [sendModal, setSendModal] = useState(null);
+  const [sendEmail, setSendEmail] = useState("");
+  const [sending, setSending] = useState(false);
   const [newFacture, setNewFacture] = useState({
     client: "", numero: "", date: new Date().toISOString().split("T")[0],
     echeance: "", lignes: [{ description: "", quantite: 1, prix: 0 }],
@@ -90,6 +93,31 @@ export default function Facturation({ theme }) {
     fetchFactures(userId);
   };
 
+  const envoyerFacture = async (facture) => {
+    if (!sendEmail) return;
+    setSending(true);
+    await fetch("/api/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "facture",
+        email: sendEmail,
+        data: {
+          numero: facture.numero,
+          client: facture.client,
+          date: facture.date,
+          echeance: facture.echeance,
+          notes: facture.notes,
+          totalTTC: formatNum(facture.total_ttc),
+        }
+      })
+    });
+    setSending(false);
+    setSendModal(null);
+    setSendEmail("");
+    alert("Facture envoyée avec succes !");
+  };
+
   const exportPDF = async (facture) => {
     const { default: jsPDF } = await import("jspdf");
     const { default: autoTable } = await import("jspdf-autotable");
@@ -109,7 +137,7 @@ export default function Facturation({ theme }) {
     doc.text("FACTURE", 150, 22);
     doc.setFontSize(10);
     doc.setTextColor(180, 180, 180);
-    doc.text(`N° ${facture.numero}`, 150, 30);
+    doc.text(`N: ${facture.numero}`, 150, 30);
     doc.text(`Date: ${facture.date}`, 150, 37);
 
     doc.setTextColor(0, 0, 0);
@@ -163,6 +191,29 @@ export default function Facturation({ theme }) {
 
   return (
     <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: bg }}>
+
+      {sendModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 16, padding: 32, width: 400 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: text, marginBottom: 8 }}>Envoyer la facture</div>
+            <div style={{ fontSize: 13, color: sub, marginBottom: 20 }}>{sendModal.numero} · {formatNum(sendModal.total_ttc)} FCFA</div>
+            <label style={{ fontSize: 11, color: sub, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Email du destinataire</label>
+            <input placeholder="email@client.com" value={sendEmail} onChange={e => setSendEmail(e.target.value)}
+              style={{ ...inputStyle, marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => envoyerFacture(sendModal)} disabled={sending}
+                style={{ flex: 1, background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                {sending ? "Envoi..." : "📧 Envoyer"}
+              </button>
+              <button onClick={() => { setSendModal(null); setSendEmail(""); }}
+                style={{ flex: 1, background: "transparent", border: `1px solid ${border}`, borderRadius: 8, color: sub, padding: "12px", fontSize: 13, cursor: "pointer" }}>
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 700, color: text }}>Facturation</div>
@@ -192,15 +243,15 @@ export default function Facturation({ theme }) {
               <input type="date" value={newFacture.date} onChange={e => setNewFacture({ ...newFacture, date: e.target.value })} style={inputStyle} />
             </div>
             <div>
-              <label style={{ fontSize: 11, color: sub, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Echéance</label>
+              <label style={{ fontSize: 11, color: sub, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Echeance</label>
               <input type="date" value={newFacture.echeance} onChange={e => setNewFacture({ ...newFacture, echeance: e.target.value })} style={inputStyle} />
             </div>
             <div>
               <label style={{ fontSize: 11, color: sub, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Statut</label>
               <select value={newFacture.statut} onChange={e => setNewFacture({ ...newFacture, statut: e.target.value })} style={inputStyle}>
                 <option value="En attente">En attente</option>
-                <option value="Payee">Payée</option>
-                <option value="Impayee">Impayée</option>
+                <option value="Payee">Payee</option>
+                <option value="Impayee">Impayee</option>
               </select>
             </div>
           </div>
@@ -213,9 +264,9 @@ export default function Facturation({ theme }) {
             {newFacture.lignes.map((l, i) => (
               <div key={i} style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr auto", gap: 8, marginBottom: 8 }}>
                 <input placeholder="Description" value={l.description} onChange={e => updateLigne(i, "description", e.target.value)} style={inputStyle} />
-                <input placeholder="Qté" type="number" value={l.quantite} onChange={e => updateLigne(i, "quantite", e.target.value)} style={inputStyle} />
+                <input placeholder="Qte" type="number" value={l.quantite} onChange={e => updateLigne(i, "quantite", e.target.value)} style={inputStyle} />
                 <input placeholder="Prix unitaire" type="number" value={l.prix} onChange={e => updateLigne(i, "prix", e.target.value)} style={inputStyle} />
-                <button onClick={() => removeLigne(i)} style={{ background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 6, color: "#E85555", padding: "8px 10px", cursor: "pointer" }}>✕</button>
+                <button onClick={() => removeLigne(i)} style={{ background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 6, color: "#E85555", padding: "8px 10px", cursor: "pointer" }}>x</button>
               </div>
             ))}
           </div>
@@ -230,7 +281,7 @@ export default function Facturation({ theme }) {
             style={{ ...inputStyle, resize: "vertical", minHeight: 60, marginBottom: 16 }} />
 
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={sauvegarder} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Créer la facture</button>
+            <button onClick={sauvegarder} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Creer la facture</button>
             <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid ${inputBorder}`, borderRadius: 8, color: sub, padding: "10px 24px", fontSize: 13, cursor: "pointer" }}>Annuler</button>
           </div>
         </div>
@@ -239,7 +290,7 @@ export default function Facturation({ theme }) {
       {loading && <div style={{ color: sub, textAlign: "center", padding: 40 }}>Chargement...</div>}
       {!loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {factures.length === 0 && <div style={{ color: sub, textAlign: "center", padding: 40, fontSize: 14 }}>Aucune facture — créez-en une !</div>}
+          {factures.length === 0 && <div style={{ color: sub, textAlign: "center", padding: 40, fontSize: 14 }}>Aucune facture — creez-en une !</div>}
           {factures.map(f => (
             <div key={f.id} style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "20px 24px", display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{ flex: 1 }}>
@@ -247,17 +298,21 @@ export default function Facturation({ theme }) {
                   <div style={{ fontSize: 15, fontWeight: 700, color: text }}>{f.numero}</div>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: f.statut === "Payee" ? "rgba(74,155,142,0.1)" : f.statut === "Impayee" ? "rgba(232,85,85,0.1)" : "rgba(245,166,35,0.1)", color: f.statut === "Payee" ? "#4A9B8E" : f.statut === "Impayee" ? "#E85555" : "#F5A623" }}>{f.statut}</span>
                 </div>
-                <div style={{ fontSize: 13, color: sub }}>{f.client} · {f.date}{f.echeance ? ` · Echéance : ${f.echeance}` : ""}</div>
+                <div style={{ fontSize: 13, color: sub }}>{f.client} · {f.date}{f.echeance ? ` · Echeance : ${f.echeance}` : ""}</div>
               </div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#F5A623", marginRight: 16 }}>{formatNum(f.total_ttc)} FCFA</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#F5A623", marginRight: 8 }}>{formatNum(f.total_ttc)} FCFA</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <select value={f.statut} onChange={e => changerStatut(f.id, e.target.value)} style={{ background: input, border: `1px solid ${inputBorder}`, borderRadius: 6, color: text, padding: "6px 10px", fontSize: 12, cursor: "pointer" }}>
                   <option value="En attente">En attente</option>
-                  <option value="Payee">Payée</option>
-                  <option value="Impayee">Impayée</option>
+                  <option value="Payee">Payee</option>
+                  <option value="Impayee">Impayee</option>
                 </select>
-                <button onClick={() => exportPDF(f)} style={{ background: "rgba(74,155,142,0.1)", border: "none", borderRadius: 8, color: "#4A9B8E", padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>📄 PDF</button>
-                <button onClick={() => supprimerFacture(f.id)} style={{ background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 8, color: "#E85555", padding: "8px 10px", fontSize: 12, cursor: "pointer" }}>✕</button>
+                <button onClick={() => { setSendModal(f); setSendEmail(clients.find(c => c.nom === f.client)?.email || ""); }}
+                  style={{ background: "rgba(124,124,240,0.1)", border: "none", borderRadius: 8, color: "#7C7CF0", padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  Email
+                </button>
+                <button onClick={() => exportPDF(f)} style={{ background: "rgba(74,155,142,0.1)", border: "none", borderRadius: 8, color: "#4A9B8E", padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>PDF</button>
+                <button onClick={() => supprimerFacture(f.id)} style={{ background: "rgba(232,85,85,0.1)", border: "none", borderRadius: 8, color: "#E85555", padding: "8px 10px", fontSize: 12, cursor: "pointer" }}>x</button>
               </div>
             </div>
           ))}
