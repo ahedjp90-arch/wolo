@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 const navItems = [
@@ -17,6 +17,7 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState({ nom: "", email: "", initiales: "?" });
   const [ticketsNonLus, setTicketsNonLus] = useState(0);
+  const prevTickets = useRef(0);
   const isDark = theme === "dark";
 
   useEffect(() => {
@@ -36,11 +37,33 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
     }
   };
 
+  const playNotification = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+  };
+
   const checkTickets = async () => {
     const uid = localStorage.getItem("wolo_user_id");
     if (!uid) return;
     const { data } = await supabase.from("tickets").select("id, lu_client").eq("user_id", uid).eq("lu_client", false);
-    setTicketsNonLus((data || []).length);
+    const count = (data || []).length;
+    if (count > prevTickets.current && prevTickets.current !== undefined) {
+      playNotification();
+    }
+    prevTickets.current = count;
+    setTicketsNonLus(count);
   };
 
   const handleLogout = async () => {
@@ -56,6 +79,7 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
       if (uid) {
         await supabase.from("tickets").update({ lu_client: true }).eq("user_id", uid).eq("lu_client", false);
         setTicketsNonLus(0);
+        prevTickets.current = 0;
       }
     }
   };
