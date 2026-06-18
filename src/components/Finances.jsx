@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import ExportPDF from "@/components/ExportPDF";
+import ExportExcel from "@/components/ExportExcel";
 
 const categoriesEntree = ["Prestation", "Vente produit", "Acompte client", "Remboursement", "Autre"];
 const categoriesSortie = ["Loyer", "Salaire", "Outils & Abonnements", "Transport", "Fournitures", "Marketing", "Autre"];
@@ -12,6 +13,7 @@ export default function Finances({ theme }) {
   const [filtre, setFiltre] = useState("tous");
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const [clients, setClients] = useState([]);
   const [newTx, setNewTx] = useState({ type: "entree", libelle: "", montant: "", date: "", categorie: "Prestation", statut: "encaissé" });
 
   const isDark = theme === "dark";
@@ -25,7 +27,8 @@ export default function Finances({ theme }) {
 
   useEffect(() => {
     const uid = localStorage.getItem("wolo_user_id");
-    if (uid) { setUserId(uid); fetchTransactions(uid); }
+    if (uid) { setUserId(uid); fetchTransactions(uid);
+    supabase.from("clients").select("*").eq("user_id", uid).then(r => setClients(r.data || [])); }
   }, []);
 
   const fetchTransactions = async (uid) => {
@@ -62,6 +65,7 @@ export default function Finances({ theme }) {
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <ExportPDF transactions={transactions} theme={theme} />
+          <ExportExcel transactions={transactions} clients={clients} theme={theme} />
           <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Nouvelle transaction</button>
         </div>
       </div>
