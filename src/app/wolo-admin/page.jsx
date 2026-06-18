@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bzczatlskreuymwibvvc.supabase.co", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
 
 export default function WoloAdmin() {
   const [users, setUsers] = useState([]);
