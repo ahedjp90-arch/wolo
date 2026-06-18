@@ -40,7 +40,7 @@ export default function Support({ theme }) {
 
   useEffect(() => {
     const uid = localStorage.getItem("wolo_user_id");
-    if (uid) { setUserId(uid); fetchTickets(uid); }
+    if (uid) { setUserId(uid); fetchTickets(uid); const interval = setInterval(() => fetchTickets(uid), 10000); return () => clearInterval(interval); }
   }, []);
 
   const fetchTickets = async (uid) => {
