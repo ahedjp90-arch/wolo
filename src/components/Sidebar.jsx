@@ -6,10 +6,11 @@ const navItems = [
   { id: "dashboard", icon: "⬡", label: "Dashboard" },
   { id: "crm", icon: "◈", label: "Clients" },
   { id: "finances", icon: "◎", label: "Finances" },
-  { id: "taches", icon: "◻", label: "Tâches" },
+  { id: "taches", icon: "◻", label: "Taches" },
   { id: "wiki", icon: "◷", label: "Wiki" },
   { id: "alertes", icon: "◉", label: "Alertes" },
   { id: "facturation", icon: "🧾", label: "Facturation" },
+  { id: "support", icon: "🎧", label: "Support" },
 ];
 
 export default function Sidebar({ activeNav, setActiveNav, theme }) {
@@ -62,7 +63,7 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
       <div style={{ padding: "0 10px 0" }}>
         <button onClick={handleLogout} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 12px", background: "rgba(232,85,85,0.08)", border: "none", borderRadius: 10, cursor: "pointer", color: "#E85555", fontSize: 14, fontWeight: 500, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap" }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>⏻</span>
-          {!collapsed && <span>Déconnexion</span>}
+          {!collapsed && <span>Deconnexion</span>}
         </button>
       </div>
 
