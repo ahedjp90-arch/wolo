@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function WoloAdmin() {
@@ -15,16 +15,17 @@ export default function WoloAdmin() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [reponse, setReponse] = useState("");
   const [sending, setSending] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const prevTicketCount = useRef(0);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("wolo_theme") || "dark";
     setTheme(savedTheme);
-    // Verifier session admin sauvegardee
     const adminAuth = localStorage.getItem("wolo_admin_auth");
     const adminTime = localStorage.getItem("wolo_admin_time");
     if (adminAuth === "true" && adminTime) {
       const elapsed = Date.now() - parseInt(adminTime);
-      if (elapsed < 60 * 60 * 1000) { // 1h
+      if (elapsed < 60 * 60 * 1000) {
         setAuth(true);
         fetchData();
         resetTimer();
@@ -35,7 +36,6 @@ export default function WoloAdmin() {
     }
   }, []);
 
-  // Timer inactivite
   useEffect(() => {
     if (!auth) return;
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
@@ -44,8 +44,41 @@ export default function WoloAdmin() {
     return () => events.forEach(e => window.removeEventListener(e, reset));
   }, [auth]);
 
-  const resetTimer = () => {
-    localStorage.setItem("wolo_admin_time", Date.now().toString());
+  // Verifier nouveaux tickets toutes les 15 secondes
+  useEffect(() => {
+    if (!auth) return;
+    const interval = setInterval(checkNewTickets, 15000);
+    return () => clearInterval(interval);
+  }, [auth, soundEnabled]);
+
+  const resetTimer = () => localStorage.setItem("wolo_admin_time", Date.now().toString());
+
+  const playSound = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Son de notification double
+      [0, 0.2].forEach((delay, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(i === 0 ? 880 : 1100, ctx.currentTime + delay);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.25);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.25);
+      });
+    } catch(e) {}
+  };
+
+  const checkNewTickets = async () => {
+    const { data } = await supabase.from("tickets").select("id").order("created_at", { ascending: false });
+    const count = (data || []).length;
+    if (count > prevTicketCount.current && prevTicketCount.current > 0 && soundEnabled) {
+      playSound();
+    }
+    prevTicketCount.current = count;
   };
 
   const handleLogin = () => {
@@ -64,6 +97,11 @@ export default function WoloAdmin() {
     localStorage.removeItem("wolo_admin_time");
     setAuth(false);
     setPassword("");
+  };
+
+  const activerSon = () => {
+    playSound();
+    setSoundEnabled(true);
   };
 
   const isDark = theme === "dark";
@@ -107,6 +145,7 @@ export default function WoloAdmin() {
     const wiki = wikiRes.data || [];
     const ticketsList = ticketsRes.data || [];
 
+    prevTicketCount.current = ticketsList.length;
     setTickets(ticketsList);
 
     const uniqueUsers = [...new Set([
@@ -216,7 +255,10 @@ export default function WoloAdmin() {
               <div style={{ fontSize: 13, color: sub }}>Vue d'ensemble de la plateforme</div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={activerSon} style={{ background: soundEnabled ? "rgba(74,155,142,0.1)" : "rgba(107,107,138,0.1)", border: `1px solid ${soundEnabled ? "rgba(74,155,142,0.3)" : border}`, borderRadius: 8, color: soundEnabled ? "#4A9B8E" : sub, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>
+              {soundEnabled ? "🔔 Son ON" : "🔕 Activer son"}
+            </button>
             <button onClick={() => setTheme("light")} style={{ background: theme === "light" ? "#F5A623" : "transparent", border: `1px solid ${border}`, borderRadius: 6, color: theme === "light" ? "#0F0F1A" : sub, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>Clair</button>
             <button onClick={() => setTheme("dark")} style={{ background: theme === "dark" ? "#F5A623" : "transparent", border: `1px solid ${border}`, borderRadius: 6, color: theme === "dark" ? "#0F0F1A" : sub, padding: "6px 12px", fontSize: 12, cursor: "pointer" }}>Sombre</button>
             <button onClick={fetchData} style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.3)", borderRadius: 8, color: "#F5A623", padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Actualiser</button>
