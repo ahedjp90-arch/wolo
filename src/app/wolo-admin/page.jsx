@@ -100,20 +100,26 @@ export default function WoloAdmin() {
     if (!reponse) return;
     setSending(true);
 
-    await supabase.from("tickets").update({ reponse, statut: "Resolu" }).eq("id", ticket.id);
+    const messages = [...(ticket.messages || []), {
+      auteur: "admin",
+      texte: reponse,
+      date: new Date().toISOString()
+    }];
+
+    await supabase.from("tickets").update({ messages, reponse, statut: "Resolu" }).eq("id", ticket.id);
 
     await fetch("/api/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "reponse_ticket",
-        email: ticket.client_email || "client@wolo.com",
+        email: ticket.client_email || "",
         data: { reference: ticket.reference, sujet: ticket.sujet, reponse }
       })
     });
 
     setReponse("");
-    setSelectedTicket(null);
+    setSelectedTicket({ ...ticket, messages, statut: "Resolu" });
     fetchData();
     setSending(false);
     alert("Reponse envoyee !");
@@ -152,7 +158,6 @@ export default function WoloAdmin() {
     <div style={{ minHeight: "100vh", background: bg, color: text, fontFamily: "Inter, sans-serif", padding: "40px 48px" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
 
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <img src="/logo.svg" style={{ width: 36, height: 36, borderRadius: 8 }} />
@@ -168,14 +173,13 @@ export default function WoloAdmin() {
           </div>
         </div>
 
-        {/* KPIs */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 32 }}>
           {[
             { label: "Utilisateurs", valeur: stats.totalUsers, icon: "👥" },
             { label: "Clients", valeur: stats.totalClients, icon: "🏢" },
             { label: "Transactions", valeur: stats.totalTransactions, icon: "💰" },
             { label: "Revenus clients", valeur: stats.totalRevenu?.toLocaleString("fr-FR") + " FCFA", icon: "📈" },
-            { label: "Tickets support", valeur: stats.totalTickets, icon: "🎧" },
+            { label: "Tickets", valeur: stats.totalTickets, icon: "🎧" },
           ].map((s, i) => (
             <div key={i} style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: "20px 24px" }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
@@ -185,14 +189,12 @@ export default function WoloAdmin() {
           ))}
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
           {[["dashboard", "Utilisateurs"], ["tickets", "Tickets Support"]].map(([id, label]) => (
             <button key={id} onClick={() => setActiveTab(id)} style={{ padding: "8px 20px", borderRadius: 8, border: `1px solid ${activeTab === id ? "#F5A623" : border}`, background: activeTab === id ? "#F5A623" : "transparent", color: activeTab === id ? "#0F0F1A" : sub, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{label}</button>
           ))}
         </div>
 
-        {/* Utilisateurs */}
         {activeTab === "dashboard" && (
           <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
             <div style={{ padding: "20px 24px", borderBottom: `1px solid ${border}` }}>
@@ -226,48 +228,31 @@ export default function WoloAdmin() {
           </div>
         )}
 
-        {/* Tickets */}
         {activeTab === "tickets" && (
-          <div>
-            <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden", marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: selectedTicket ? "1fr 1.5fr" : "1fr", gap: 20 }}>
+            <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: tableBg }}>
-                    {["Sujet", "Statut", "Priorite", "Raison", "Date", "Reference", "Actions"].map(h => (
-                      <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>{h}</th>
+                    {["Sujet", "Statut", "Priorite", "Date"].map(h => (
+                      <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {loading && <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: sub }}>Chargement...</td></tr>}
-                  {!loading && tickets.length === 0 && <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: sub }}>Aucun ticket</td></tr>}
+                  {loading && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Chargement...</td></tr>}
+                  {!loading && tickets.length === 0 && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Aucun ticket</td></tr>}
                   {!loading && tickets.map((t) => (
-                    <tr key={t.id} style={{ borderTop: `1px solid ${border}` }}>
-                      <td style={{ padding: "14px 20px", fontSize: 13, color: text, fontWeight: 600 }}>{t.sujet}</td>
-                      <td style={{ padding: "14px 20px" }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: statutColors[t.statut]?.bg, color: statutColors[t.statut]?.tx }}>{t.statut}</span>
+                    <tr key={t.id} onClick={() => { setSelectedTicket(selectedTicket?.id === t.id ? null : t); setReponse(""); }}
+                      style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selectedTicket?.id === t.id ? "rgba(245,166,35,0.05)" : "transparent" }}>
+                      <td style={{ padding: "14px 16px", fontSize: 13, color: text, fontWeight: 600 }}>{t.sujet}</td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statutColors[t.statut]?.bg, color: statutColors[t.statut]?.tx }}>{t.statut}</span>
                       </td>
-                      <td style={{ padding: "14px 20px" }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: prioriteColors[t.priorite]?.bg, color: prioriteColors[t.priorite]?.tx }}>{t.priorite}</span>
+                      <td style={{ padding: "14px 16px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: prioriteColors[t.priorite]?.bg, color: prioriteColors[t.priorite]?.tx }}>{t.priorite}</span>
                       </td>
-                      <td style={{ padding: "14px 20px", fontSize: 13, color: sub }}>{t.raison}</td>
-                      <td style={{ padding: "14px 20px", fontSize: 12, color: sub }}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</td>
-                      <td style={{ padding: "14px 20px", fontSize: 12, color: sub, fontFamily: "monospace" }}>{t.reference}</td>
-                      <td style={{ padding: "14px 20px" }}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button onClick={() => setSelectedTicket(selectedTicket?.id === t.id ? null : t)}
-                            style={{ background: "rgba(124,124,240,0.1)", border: "none", borderRadius: 6, color: "#7C7CF0", padding: "4px 10px", fontSize: 11, cursor: "pointer" }}>
-                            Repondre
-                          </button>
-                          <select value={t.statut} onChange={e => changerStatutTicket(t.id, e.target.value)}
-                            style={{ background: input, border: `1px solid ${inputBorder}`, borderRadius: 6, color: text, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>
-                            <option value="Ouvert">Ouvert</option>
-                            <option value="En cours">En cours</option>
-                            <option value="Resolu">Resolu</option>
-                            <option value="Ferme">Ferme</option>
-                          </select>
-                        </div>
-                      </td>
+                      <td style={{ padding: "14px 16px", fontSize: 12, color: sub }}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -275,24 +260,49 @@ export default function WoloAdmin() {
             </div>
 
             {selectedTicket && (
-              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: text, marginBottom: 8 }}>{selectedTicket.sujet}</div>
-                <div style={{ fontSize: 12, color: sub, marginBottom: 16 }}>{selectedTicket.reference} · {selectedTicket.raison}</div>
-                {selectedTicket.message && (
-                  <div style={{ background: input, borderRadius: 10, padding: "14px 16px", fontSize: 13, color: text, lineHeight: 1.6, marginBottom: 16 }}>{selectedTicket.message}</div>
-                )}
-                <textarea placeholder="Votre reponse au client..." value={reponse} onChange={e => setReponse(e.target.value)}
-                  style={{ ...inputStyle, resize: "vertical", minHeight: 100, marginBottom: 12 }} />
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => repondreTicket(selectedTicket)} disabled={sending}
-                    style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: sending ? 0.7 : 1 }}>
-                    {sending ? "Envoi..." : "Envoyer la reponse"}
-                  </button>
-                  <button onClick={() => setSelectedTicket(null)}
-                    style={{ background: "transparent", border: `1px solid ${border}`, borderRadius: 8, color: sub, padding: "10px 24px", fontSize: 13, cursor: "pointer" }}>
-                    Annuler
-                  </button>
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: 24, display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: text }}>{selectedTicket.sujet}</div>
+                    <div style={{ fontSize: 12, color: sub, marginTop: 4 }}>{selectedTicket.reference} · {selectedTicket.client_email}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <select value={selectedTicket.statut} onChange={e => changerStatutTicket(selectedTicket.id, e.target.value)}
+                      style={{ background: input, border: `1px solid ${inputBorder}`, borderRadius: 6, color: text, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>
+                      <option value="Ouvert">Ouvert</option>
+                      <option value="En cours">En cours</option>
+                      <option value="Resolu">Resolu</option>
+                      <option value="Ferme">Ferme</option>
+                    </select>
+                    <button onClick={() => setSelectedTicket(null)} style={{ background: "transparent", border: "none", color: sub, fontSize: 18, cursor: "pointer" }}>x</button>
+                  </div>
                 </div>
+
+                {/* Messages */}
+                <div style={{ flex: 1, overflowY: "auto", maxHeight: 320, display: "flex", flexDirection: "column", gap: 10, marginBottom: 16, padding: "4px 0" }}>
+                  {(selectedTicket.messages || []).map((msg, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: msg.auteur === "admin" ? "flex-end" : "flex-start" }}>
+                      <div style={{ maxWidth: "80%", background: msg.auteur === "admin" ? "rgba(74,155,142,0.1)" : "rgba(245,166,35,0.1)", border: `1px solid ${msg.auteur === "admin" ? "rgba(74,155,142,0.2)" : "rgba(245,166,35,0.2)"}`, borderRadius: 12, padding: "10px 14px" }}>
+                        <div style={{ fontSize: 11, color: msg.auteur === "admin" ? "#4A9B8E" : "#F5A623", fontWeight: 600, marginBottom: 4 }}>
+                          {msg.auteur === "admin" ? "Vous (Admin)" : "Client"}
+                        </div>
+                        <div style={{ fontSize: 13, color: text, lineHeight: 1.5 }}>{msg.texte}</div>
+                        <div style={{ fontSize: 10, color: sub, marginTop: 6 }}>{new Date(msg.date).toLocaleString("fr-FR")}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {(!selectedTicket.messages || selectedTicket.messages.length === 0) && (
+                    <div style={{ fontSize: 13, color: sub, textAlign: "center", padding: 20 }}>Aucun message</div>
+                  )}
+                </div>
+
+                {/* Reponse */}
+                <textarea placeholder="Votre reponse au client..." value={reponse} onChange={e => setReponse(e.target.value)}
+                  style={{ ...inputStyle, resize: "vertical", minHeight: 80, marginBottom: 12 }} />
+                <button onClick={() => repondreTicket(selectedTicket)} disabled={sending}
+                  style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: sending ? 0.7 : 1 }}>
+                  {sending ? "Envoi..." : "Envoyer la reponse"}
+                </button>
               </div>
             )}
           </div>
