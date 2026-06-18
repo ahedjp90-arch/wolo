@@ -104,7 +104,7 @@ export default function Facturation({ theme }) {
     autoTable(doc, {
       startY: 90,
       head: [["Description", "Qté", "Prix Unit. (FCFA)", "Total (FCFA)"]],
-      body: facture.lignes.map(l => [l.description, l.quantite, l.prix.toLocaleString(), (l.quantite * l.prix).toLocaleString()]),
+      body: facture.lignes.map(l => [l.description, l.quantite, l.prix.toLocaleString("fr-FR"), (l.quantite * l.prix).toLocaleString("fr-FR")]),
       headStyles: { fillColor: [15, 15, 26], textColor: [245, 166, 35], fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 245, 250] },
       styles: { fontSize: 9, cellPadding: 5 },
@@ -115,12 +115,12 @@ export default function Facturation({ theme }) {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total HT : ${facture.totalHT?.toLocaleString()} FCFA`, 140, finalY);
-    doc.text(`TVA (18%) : ${facture.tva?.toLocaleString()} FCFA`, 140, finalY + 8);
+    doc.text(`Total HT : ${facture.totalHT?.toLocaleString("fr-FR")} FCFA`, 140, finalY);
+    doc.text(`TVA (18%) : ${facture.tva?.toLocaleString("fr-FR")} FCFA`, 140, finalY + 8);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(245, 166, 35);
-    doc.text(`Total TTC : ${facture.totalTTC?.toLocaleString()} FCFA`, 140, finalY + 18);
+    doc.text(`Total TTC : ${facture.totalTTC?.toLocaleString("fr-FR")} FCFA`, 140, finalY + 18);
 
     if (facture.notes) {
       doc.setFont("helvetica", "normal");
@@ -208,9 +208,9 @@ export default function Facturation({ theme }) {
           </div>
 
           <div style={{ background: isDark ? "#0F0F1A" : "#F9FAFB", borderRadius: 10, padding: "14px 20px", marginBottom: 16, textAlign: "right" }}>
-            <div style={{ fontSize: 13, color: sub, marginBottom: 4 }}>Total HT : {totalLignes.toLocaleString()} FCFA</div>
-            <div style={{ fontSize: 13, color: sub, marginBottom: 4 }}>TVA (18%) : {tva.toLocaleString()} FCFA</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#F5A623" }}>Total TTC : {totalTTC.toLocaleString()} FCFA</div>
+            <div style={{ fontSize: 13, color: sub, marginBottom: 4 }}>Total HT : {totalLignes.toLocaleString("fr-FR")} FCFA</div>
+            <div style={{ fontSize: 13, color: sub, marginBottom: 4 }}>TVA (18%) : {tva.toLocaleString("fr-FR")} FCFA</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#F5A623" }}>Total TTC : {totalTTC.toLocaleString("fr-FR")} FCFA</div>
           </div>
 
           <textarea placeholder="Notes (optionnel)" value={newFacture.notes} onChange={e => setNewFacture({ ...newFacture, notes: e.target.value })} style={{ ...inputStyle, resize: "vertical", minHeight: 60, marginBottom: 16 }} />
@@ -233,7 +233,7 @@ export default function Facturation({ theme }) {
               </div>
               <div style={{ fontSize: 13, color: sub }}>{f.client} · {f.date} {f.echeance ? `· Échéance : ${f.echeance}` : ""}</div>
             </div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#F5A623", marginRight: 16 }}>{f.totalTTC?.toLocaleString()} FCFA</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#F5A623", marginRight: 16 }}>{f.totalTTC?.toLocaleString("fr-FR")} FCFA</div>
             <div style={{ display: "flex", gap: 8 }}>
               <select value={f.statut} onChange={e => changerStatut(f.id, e.target.value)} style={{ background: input, border: `1px solid ${inputBorder}`, borderRadius: 6, color: text, padding: "6px 10px", fontSize: 12, cursor: "pointer" }}>
                 <option value="En attente">En attente</option>
