@@ -22,14 +22,11 @@ export default function Support({ theme }) {
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [filtreStatut, setFiltreStatut] = useState("Tous");
-  const [filtrePriorite, setFiltrePriorite] = useState("Toutes");
-  const [filtreRaison, setFiltreRaison] = useState("Toutes");
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [sending, setSending] = useState(false);
-  const [newTicket, setNewTicket] = useState({
-    sujet: "", message: "", priorite: "Normale", raison: "Question"
-  });
+  const [newMessage, setNewMessage] = useState("");
+  const [newTicket, setNewTicket] = useState({ sujet: "", message: "", priorite: "Normale", raison: "Question" });
 
   const isDark = theme === "dark";
   const bg = isDark ? "#0F0F1A" : "#F3F4F6";
@@ -60,6 +57,7 @@ export default function Support({ theme }) {
     setSending(true);
     const ref = genRef();
     const clientEmail = localStorage.getItem("wolo_email") || "";
+    const messages = [{ auteur: "client", texte: newTicket.message, date: new Date().toISOString() }];
 
     const { error } = await supabase.from("tickets").insert([{
       ...newTicket,
@@ -67,6 +65,7 @@ export default function Support({ theme }) {
       reference: ref,
       statut: "Ouvert",
       client_email: clientEmail,
+      messages,
     }]);
 
     if (!error) {
@@ -76,14 +75,7 @@ export default function Support({ theme }) {
         body: JSON.stringify({
           type: "nouveau_ticket",
           email: "contact.prosperadigital@gmail.com",
-          data: {
-            reference: ref,
-            sujet: newTicket.sujet,
-            priorite: newTicket.priorite,
-            raison: newTicket.raison,
-            message: newTicket.message,
-            clientEmail
-          }
+          data: { reference: ref, sujet: newTicket.sujet, priorite: newTicket.priorite, raison: newTicket.raison, message: newTicket.message, clientEmail }
         })
       });
       fetchTickets(userId);
@@ -93,12 +85,33 @@ export default function Support({ theme }) {
     setSending(false);
   };
 
+  const envoyerMessage = async () => {
+    if (!newMessage || !selected) return;
+    setSending(true);
+    const messages = [...(selected.messages || []), { auteur: "client", texte: newMessage, date: new Date().toISOString() }];
+    const { error } = await supabase.from("tickets").update({ messages, statut: "Ouvert" }).eq("id", selected.id);
+    if (!error) {
+      await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "nouveau_ticket",
+          email: "contact.prosperadigital@gmail.com",
+          data: { reference: selected.reference, sujet: selected.sujet, priorite: selected.priorite, raison: selected.raison, message: newMessage, clientEmail: selected.client_email }
+        })
+      });
+      setNewMessage("");
+      const updated = { ...selected, messages, statut: "Ouvert" };
+      setSelected(updated);
+      fetchTickets(userId);
+    }
+    setSending(false);
+  };
+
   const filtered = tickets.filter(t => {
     const matchSearch = t.sujet?.toLowerCase().includes(search.toLowerCase()) || t.reference?.toLowerCase().includes(search.toLowerCase());
     const matchStatut = filtreStatut === "Tous" || t.statut === filtreStatut;
-    const matchPriorite = filtrePriorite === "Toutes" || t.priorite === filtrePriorite;
-    const matchRaison = filtreRaison === "Toutes" || t.raison === filtreRaison;
-    return matchSearch && matchStatut && matchPriorite && matchRaison;
+    return matchSearch && matchStatut;
   });
 
   return (
@@ -131,7 +144,7 @@ export default function Support({ theme }) {
                 <option value="Autre">Autre</option>
               </select>
             </div>
-            <textarea placeholder="Decrivez votre probleme ou votre demande..." value={newTicket.message} onChange={e => setNewTicket({ ...newTicket, message: e.target.value })}
+            <textarea placeholder="Decrivez votre probleme..." value={newTicket.message} onChange={e => setNewTicket({ ...newTicket, message: e.target.value })}
               style={{ ...inputStyle, resize: "vertical", minHeight: 100 }} />
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
@@ -143,7 +156,7 @@ export default function Support({ theme }) {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, margin: "16px 0", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, margin: "16px 0" }}>
         <input placeholder="Rechercher un ticket..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, maxWidth: 280 }} />
         <select value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)} style={{ ...inputStyle, width: "auto" }}>
           <option value="Tous">Tous les statuts</option>
@@ -152,79 +165,85 @@ export default function Support({ theme }) {
           <option value="Resolu">Resolu</option>
           <option value="Ferme">Ferme</option>
         </select>
-        <select value={filtrePriorite} onChange={e => setFiltrePriorite(e.target.value)} style={{ ...inputStyle, width: "auto" }}>
-          <option value="Toutes">Toutes les priorites</option>
-          <option value="Basse">Basse</option>
-          <option value="Normale">Normale</option>
-          <option value="Haute">Haute</option>
-          <option value="Urgente">Urgente</option>
-        </select>
-        <select value={filtreRaison} onChange={e => setFiltreRaison(e.target.value)} style={{ ...inputStyle, width: "auto" }}>
-          <option value="Toutes">Toutes les raisons</option>
-          <option value="Question">Question</option>
-          <option value="Bug">Bug</option>
-          <option value="Amelioration">Amelioration</option>
-          <option value="Facturation">Facturation</option>
-          <option value="Autre">Autre</option>
-        </select>
       </div>
 
-      <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: isDark ? "#0F0F1A" : "#F9FAFB" }}>
-              {["Sujet", "Statut", "Priorite", "Raison", "Date", "Reference"].map(h => (
-                <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: sub }}>Chargement...</td></tr>}
-            {!loading && filtered.length === 0 && <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: sub }}>Aucun ticket trouve</td></tr>}
-            {!loading && filtered.map((t) => (
-              <tr key={t.id} onClick={() => setSelected(selected?.id === t.id ? null : t)}
-                style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selected?.id === t.id ? "rgba(245,166,35,0.05)" : "transparent" }}>
-                <td style={{ padding: "14px 20px", fontSize: 13, color: text, fontWeight: 600 }}>{t.sujet}</td>
-                <td style={{ padding: "14px 20px" }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: statutColors[t.statut]?.bg, color: statutColors[t.statut]?.tx }}>{t.statut}</span>
-                </td>
-                <td style={{ padding: "14px 20px" }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: prioriteColors[t.priorite]?.bg, color: prioriteColors[t.priorite]?.tx }}>{t.priorite}</span>
-                </td>
-                <td style={{ padding: "14px 20px", fontSize: 13, color: sub }}>{t.raison}</td>
-                <td style={{ padding: "14px 20px", fontSize: 12, color: sub }}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</td>
-                <td style={{ padding: "14px 20px", fontSize: 12, color: sub, fontFamily: "monospace" }}>{t.reference}</td>
+      <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 1.5fr" : "1fr", gap: 20 }}>
+        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: isDark ? "#0F0F1A" : "#F9FAFB" }}>
+                {["Sujet", "Statut", "Priorite", "Date"].map(h => (
+                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: 24, marginTop: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: text }}>{selected.sujet}</div>
-              <div style={{ fontSize: 12, color: sub, marginTop: 4 }}>{selected.reference} · {new Date(selected.created_at).toLocaleDateString("fr-FR")}</div>
-            </div>
-            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", color: sub, fontSize: 18, cursor: "pointer" }}>x</button>
-          </div>
-          <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: statutColors[selected.statut]?.bg, color: statutColors[selected.statut]?.tx }}>{selected.statut}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: prioriteColors[selected.priorite]?.bg, color: prioriteColors[selected.priorite]?.tx }}>{selected.priorite}</span>
-            <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 20, background: isDark ? "#1A1A2E" : "#F3F4F6", color: sub }}>{selected.raison}</span>
-          </div>
-          {selected.message && (
-            <div style={{ background: input, borderRadius: 10, padding: "14px 16px", fontSize: 13, color: text, lineHeight: 1.6, marginBottom: 12 }}>{selected.message}</div>
-          )}
-          {selected.reponse && (
-            <div>
-              <div style={{ fontSize: 12, color: "#4A9B8E", fontWeight: 600, marginBottom: 6 }}>Reponse de l'equipe WOLO :</div>
-              <div style={{ background: "rgba(74,155,142,0.06)", border: "1px solid rgba(74,155,142,0.2)", borderRadius: 10, padding: "14px 16px", fontSize: 13, color: text, lineHeight: 1.6 }}>{selected.reponse}</div>
-            </div>
-          )}
+            </thead>
+            <tbody>
+              {loading && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Chargement...</td></tr>}
+              {!loading && filtered.length === 0 && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Aucun ticket trouve</td></tr>}
+              {!loading && filtered.map((t) => (
+                <tr key={t.id} onClick={() => setSelected(selected?.id === t.id ? null : t)}
+                  style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selected?.id === t.id ? "rgba(245,166,35,0.05)" : "transparent" }}>
+                  <td style={{ padding: "14px 16px", fontSize: 13, color: text, fontWeight: 600 }}>{t.sujet}</td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statutColors[t.statut]?.bg, color: statutColors[t.statut]?.tx }}>{t.statut}</span>
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: prioriteColors[t.priorite]?.bg, color: prioriteColors[t.priorite]?.tx }}>{t.priorite}</span>
+                  </td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: sub }}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {selected && (
+          <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 14, padding: 24, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: text }}>{selected.sujet}</div>
+                <div style={{ fontSize: 12, color: sub, marginTop: 4 }}>{selected.reference} · {selected.raison}</div>
+              </div>
+              <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", color: sub, fontSize: 18, cursor: "pointer" }}>x</button>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: statutColors[selected.statut]?.bg, color: statutColors[selected.statut]?.tx }}>{selected.statut}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: prioriteColors[selected.priorite]?.bg, color: prioriteColors[selected.priorite]?.tx }}>{selected.priorite}</span>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: "auto", maxHeight: 320, display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+              {(selected.messages || []).map((msg, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: msg.auteur === "client" ? "flex-end" : "flex-start" }}>
+                  <div style={{ maxWidth: "80%", background: msg.auteur === "client" ? "rgba(245,166,35,0.1)" : "rgba(74,155,142,0.1)", border: `1px solid ${msg.auteur === "client" ? "rgba(245,166,35,0.2)" : "rgba(74,155,142,0.2)"}`, borderRadius: 12, padding: "10px 14px" }}>
+                    <div style={{ fontSize: 11, color: msg.auteur === "client" ? "#F5A623" : "#4A9B8E", fontWeight: 600, marginBottom: 4 }}>
+                      {msg.auteur === "client" ? "Vous" : "Equipe WOLO"}
+                    </div>
+                    <div style={{ fontSize: 13, color: text, lineHeight: 1.5 }}>{msg.texte}</div>
+                    <div style={{ fontSize: 10, color: sub, marginTop: 6 }}>{new Date(msg.date).toLocaleString("fr-FR")}</div>
+                  </div>
+                </div>
+              ))}
+              {(!selected.messages || selected.messages.length === 0) && (
+                <div style={{ fontSize: 13, color: sub, textAlign: "center", padding: 20 }}>Aucun message</div>
+              )}
+            </div>
+
+            {/* Envoyer un message */}
+            {selected.statut !== "Ferme" && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <input placeholder="Votre message..." value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && envoyerMessage()}
+                  style={{ ...inputStyle, flex: 1 }} />
+                <button onClick={envoyerMessage} disabled={sending} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: sending ? 0.7 : 1, flexShrink: 0 }}>
+                  {sending ? "..." : "Envoyer"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
