@@ -16,7 +16,7 @@ export default function WoloAdmin() {
   const [reponse, setReponse] = useState("");
   const [sending, setSending] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const prevTicketCount = useRef(0);
+  const soundEnabledRef = useRef(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("wolo_theme") || "dark";
@@ -38,25 +38,34 @@ export default function WoloAdmin() {
 
   useEffect(() => {
     if (!auth) return;
+
+    // Realtime subscription
+    const channel = supabase.channel("tickets-admin")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tickets" }, (payload) => {
+        setTickets(prev => [payload.new, ...prev]);
+        setStats(prev => ({ ...prev, totalTickets: prev.totalTickets + 1 }));
+        if (soundEnabledRef.current) playSound();
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tickets" }, (payload) => {
+        setTickets(prev => prev.map(t => t.id === payload.new.id ? payload.new : t));
+      })
+      .subscribe();
+
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
     const reset = () => resetTimer();
     events.forEach(e => window.addEventListener(e, reset));
-    return () => events.forEach(e => window.removeEventListener(e, reset));
-  }, [auth]);
 
-  // Verifier nouveaux tickets toutes les 15 secondes
-  useEffect(() => {
-    if (!auth) return;
-    const interval = setInterval(checkNewTickets, 15000);
-    return () => clearInterval(interval);
-  }, [auth, soundEnabled]);
+    return () => {
+      supabase.removeChannel(channel);
+      events.forEach(e => window.removeEventListener(e, reset));
+    };
+  }, [auth]);
 
   const resetTimer = () => localStorage.setItem("wolo_admin_time", Date.now().toString());
 
   const playSound = () => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      // Son de notification double
       [0, 0.2].forEach((delay, i) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -72,13 +81,10 @@ export default function WoloAdmin() {
     } catch(e) {}
   };
 
-  const checkNewTickets = async () => {
-    const { data } = await supabase.from("tickets").select("id").order("created_at", { ascending: false });
-    const count = (data || []).length;
-    if (count > prevTicketCount.current && prevTicketCount.current > 0 && soundEnabled) {
-      playSound();
-    }
-    prevTicketCount.current = count;
+  const activerSon = () => {
+    playSound();
+    soundEnabledRef.current = true;
+    setSoundEnabled(true);
   };
 
   const handleLogin = () => {
@@ -97,11 +103,6 @@ export default function WoloAdmin() {
     localStorage.removeItem("wolo_admin_time");
     setAuth(false);
     setPassword("");
-  };
-
-  const activerSon = () => {
-    playSound();
-    setSoundEnabled(true);
   };
 
   const isDark = theme === "dark";
@@ -145,7 +146,6 @@ export default function WoloAdmin() {
     const wiki = wikiRes.data || [];
     const ticketsList = ticketsRes.data || [];
 
-    prevTicketCount.current = ticketsList.length;
     setTickets(ticketsList);
 
     const uniqueUsers = [...new Set([
@@ -209,14 +209,12 @@ export default function WoloAdmin() {
 
     setReponse("");
     setSelectedTicket({ ...ticket, messages: nouveauxMessages, statut: "Resolu" });
-    fetchData();
     setSending(false);
     alert("Reponse envoyee !");
   };
 
   const changerStatutTicket = async (id, statut) => {
     await supabase.from("tickets").update({ statut }).eq("id", id);
-    fetchData();
   };
 
   if (!auth) {
@@ -252,7 +250,7 @@ export default function WoloAdmin() {
             <img src="/logo.svg" style={{ width: 36, height: 36, borderRadius: 8 }} />
             <div>
               <div style={{ fontSize: 24, fontWeight: 700, color: text }}>WOLO Admin</div>
-              <div style={{ fontSize: 13, color: sub }}>Vue d'ensemble de la plateforme</div>
+              <div style={{ fontSize: 13, color: sub }}>Vue d'ensemble · Temps reel</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -337,8 +335,8 @@ export default function WoloAdmin() {
                   {!loading && tickets.length === 0 && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Aucun ticket</td></tr>}
                   {!loading && tickets.map((t) => (
                     <tr key={t.id} onClick={() => { setSelectedTicket(selectedTicket?.id === t.id ? null : t); setReponse(""); }}
-                      style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selectedTicket?.id === t.id ? "rgba(245,166,35,0.05)" : "transparent" }}>
-                      <td style={{ padding: "14px 16px", fontSize: 13, color: text, fontWeight: 600 }}>{t.sujet}</td>
+                      style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selectedTicket?.id === t.id ? "rgba(245,166,35,0.05)" : !t.reponse ? "rgba(245,166,35,0.02)" : "transparent" }}>
+                      <td style={{ padding: "14px 16px", fontSize: 13, color: text, fontWeight: !t.reponse ? 700 : 400 }}>{t.sujet} {!t.reponse ? "🆕" : ""}</td>
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statutColors[t.statut]?.bg, color: statutColors[t.statut]?.tx }}>{t.statut}</span>
                       </td>
