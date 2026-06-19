@@ -7,30 +7,53 @@ export async function POST(request: Request) {
     const accountKey = process.env.CINETPAY_API_KEY;
     const accountPassword = process.env.CINETPAY_PWD;
 
-    // Etape 1 - Obtenir le token
-    const authResponse = await fetch('https://api.cinetpay.net/v1/auth/login', {
+    const nomParts = (nom || 'Client WOLO').split(' ');
+    const firstName = nomParts[0] || 'Client';
+    const lastName = nomParts.slice(1).join(' ') || 'WOLO';
+    const transactionId = `WOLO${Date.now()}`.slice(0, 30);
+
+    // Etape 1 - Auth
+    const authRes = await fetch('https://secure.cinetpay.net/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apikey: accountKey,
-        password: accountPassword,
-      }),
+      body: JSON.stringify({ apikey: accountKey, password: accountPassword }),
     });
-
-    const authData = await authResponse.json();
+    const authData = await authRes.json();
 
     if (!authData.data?.token) {
-      return NextResponse.json({ error: 'Authentification CinetPay echouee: ' + JSON.stringify(authData) }, { status: 400 });
+      // Essayer sans auth - envoyer apikey directement
+      const payRes = await fetch('https://secure.cinetpay.net/v1/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': accountKey || '',
+        },
+        body: JSON.stringify({
+          currency: 'XOF',
+          merchant_transaction_id: transactionId,
+          amount: amount,
+          lang: 'fr',
+          designation: `Abonnement WOLO ${plan}`,
+          client_email: email,
+          client_first_name: firstName,
+          client_last_name: lastName,
+          success_url: 'https://wolo.e-plazastore.com/abonnement?status=success',
+          failed_url: 'https://wolo.e-plazastore.com/abonnement?status=failed',
+          notify_url: 'https://wolo.e-plazastore.com/api/cinetpay/notify',
+          direct_pay: false,
+        }),
+      });
+      const payData = await payRes.json();
+      if (payData.payment_url) {
+        return NextResponse.json({ success: true, paymentUrl: payData.payment_url });
+      }
+      return NextResponse.json({ error: JSON.stringify(payData) }, { status: 400 });
     }
 
     const token = authData.data.token;
 
-    // Etape 2 - Initier le paiement
-    const nomParts = (nom || 'Client WOLO').split(' ');
-    const firstName = nomParts[0] || 'Client';
-    const lastName = nomParts.slice(1).join(' ') || 'WOLO';
-
-    const paymentResponse = await fetch('https://api.cinetpay.net/v1/payment', {
+    // Etape 2 - Paiement avec token
+    const payRes = await fetch('https://secure.cinetpay.net/v1/payment', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,7 +61,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         currency: 'XOF',
-        merchant_transaction_id: `WOLO_${Date.now()}`,
+        merchant_transaction_id: transactionId,
         amount: amount,
         lang: 'fr',
         designation: `Abonnement WOLO ${plan}`,
@@ -52,18 +75,14 @@ export async function POST(request: Request) {
       }),
     });
 
-    const paymentData = await paymentResponse.json();
+    const payData = await payRes.json();
 
-    if (paymentData.code === 200 && paymentData.payment_url) {
-      return NextResponse.json({
-        success: true,
-        paymentUrl: paymentData.payment_url,
-      });
+    if (payData.payment_url) {
+      return NextResponse.json({ success: true, paymentUrl: payData.payment_url });
     }
 
-    return NextResponse.json({ error: paymentData.message || JSON.stringify(paymentData) }, { status: 400 });
+    return NextResponse.json({ error: JSON.stringify(payData) }, { status: 400 });
   } catch (err) {
-    console.error('CinetPay error:', err);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur: ' + err }, { status: 500 });
   }
 }
