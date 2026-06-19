@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { t } from "@/lib/i18n";
 
 const statutColors = {
   "Ouvert": { bg: "rgba(245,166,35,0.1)", tx: "#F5A623" },
@@ -16,7 +17,7 @@ const prioriteColors = {
   "Urgente": { bg: "rgba(232,85,85,0.1)", tx: "#E85555" },
 };
 
-export default function Support({ theme }) {
+export default function Support({ theme, lang = "fr" }) {
   const [tickets, setTickets] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -38,9 +39,26 @@ export default function Support({ theme }) {
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
   const inputStyle = { background: input, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "10px 14px", color: text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
 
+  const statutOptions = lang === "en"
+    ? [{ val: "Tous", label: "All statuses" }, { val: "Ouvert", label: "Open" }, { val: "En cours", label: "In progress" }, { val: "Resolu", label: "Resolved" }, { val: "Ferme", label: "Closed" }]
+    : [{ val: "Tous", label: "Tous les statuts" }, { val: "Ouvert", label: "Ouvert" }, { val: "En cours", label: "En cours" }, { val: "Resolu", label: "Resolu" }, { val: "Ferme", label: "Ferme" }];
+
+  const prioriteOptions = lang === "en"
+    ? [{ val: "Basse", label: "Low" }, { val: "Normale", label: "Normal" }, { val: "Haute", label: "High" }, { val: "Urgente", label: "Urgent" }]
+    : [{ val: "Basse", label: "Basse" }, { val: "Normale", label: "Normale" }, { val: "Haute", label: "Haute" }, { val: "Urgente", label: "Urgente" }];
+
+  const raisonOptions = lang === "en"
+    ? [{ val: "Question", label: "Question" }, { val: "Bug", label: "Bug" }, { val: "Amelioration", label: "Improvement" }, { val: "Facturation", label: "Billing" }, { val: "Autre", label: "Other" }]
+    : [{ val: "Question", label: "Question" }, { val: "Bug", label: "Bug" }, { val: "Amelioration", label: "Amelioration" }, { val: "Facturation", label: "Facturation" }, { val: "Autre", label: "Autre" }];
+
   useEffect(() => {
     const uid = localStorage.getItem("wolo_user_id");
-    if (uid) { setUserId(uid); fetchTickets(uid); const interval = setInterval(() => fetchTickets(uid), 10000); return () => clearInterval(interval); }
+    if (uid) {
+      setUserId(uid);
+      fetchTickets(uid);
+      const interval = setInterval(() => fetchTickets(uid), 10000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const fetchTickets = async (uid) => {
@@ -118,52 +136,41 @@ export default function Support({ theme }) {
     <div style={{ flex: 1, overflow: "auto", padding: "28px 32px", background: bg }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: text }}>Support</div>
-          <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>Suivez vos demandes de support et incidents.</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: text }}>{t("support_titre", lang)}</div>
+          <div style={{ fontSize: 13, color: sub, marginTop: 2 }}>{t("support_desc", lang)}</div>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Creer un ticket</button>
+        <button onClick={() => setShowForm(!showForm)} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{t("creer_ticket", lang)}</button>
       </div>
 
       {showForm && (
         <div style={{ background: card, border: `1px solid ${inputBorder}`, borderRadius: 14, padding: 24, marginBottom: 24, marginTop: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 16 }}>Nouveau ticket</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: text, marginBottom: 16 }}>{lang === "en" ? "New ticket" : "Nouveau ticket"}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <input placeholder="Sujet" value={newTicket.sujet} onChange={e => setNewTicket({ ...newTicket, sujet: e.target.value })} style={inputStyle} />
+            <input placeholder={t("sujet", lang)} value={newTicket.sujet} onChange={e => setNewTicket({ ...newTicket, sujet: e.target.value })} style={inputStyle} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <select value={newTicket.priorite} onChange={e => setNewTicket({ ...newTicket, priorite: e.target.value })} style={inputStyle}>
-                <option value="Basse">Basse</option>
-                <option value="Normale">Normale</option>
-                <option value="Haute">Haute</option>
-                <option value="Urgente">Urgente</option>
+                {prioriteOptions.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
               </select>
               <select value={newTicket.raison} onChange={e => setNewTicket({ ...newTicket, raison: e.target.value })} style={inputStyle}>
-                <option value="Question">Question</option>
-                <option value="Bug">Bug</option>
-                <option value="Amelioration">Amelioration</option>
-                <option value="Facturation">Facturation</option>
-                <option value="Autre">Autre</option>
+                {raisonOptions.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
               </select>
             </div>
-            <textarea placeholder="Decrivez votre probleme..." value={newTicket.message} onChange={e => setNewTicket({ ...newTicket, message: e.target.value })}
+            <textarea placeholder={lang === "en" ? "Describe your issue..." : "Decrivez votre probleme..."} value={newTicket.message} onChange={e => setNewTicket({ ...newTicket, message: e.target.value })}
               style={{ ...inputStyle, resize: "vertical", minHeight: 100 }} />
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button onClick={creerTicket} disabled={sending} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "10px 24px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: sending ? 0.7 : 1 }}>
-              {sending ? "Envoi..." : "Envoyer"}
+              {sending ? "..." : t("envoyer", lang)}
             </button>
-            <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid ${inputBorder}`, borderRadius: 8, color: sub, padding: "10px 24px", fontSize: 13, cursor: "pointer" }}>Annuler</button>
+            <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid ${inputBorder}`, borderRadius: 8, color: sub, padding: "10px 24px", fontSize: 13, cursor: "pointer" }}>{t("annuler", lang)}</button>
           </div>
         </div>
       )}
 
       <div style={{ display: "flex", gap: 10, margin: "16px 0" }}>
-        <input placeholder="Rechercher un ticket..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, maxWidth: 280 }} />
+        <input placeholder={t("rechercher_ticket", lang)} value={search} onChange={e => setSearch(e.target.value)} style={{ ...inputStyle, maxWidth: 280 }} />
         <select value={filtreStatut} onChange={e => setFiltreStatut(e.target.value)} style={{ ...inputStyle, width: "auto" }}>
-          <option value="Tous">Tous les statuts</option>
-          <option value="Ouvert">Ouvert</option>
-          <option value="En cours">En cours</option>
-          <option value="Resolu">Resolu</option>
-          <option value="Ferme">Ferme</option>
+          {statutOptions.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
         </select>
       </div>
 
@@ -172,25 +179,25 @@ export default function Support({ theme }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: isDark ? "#0F0F1A" : "#F9FAFB" }}>
-                {["Sujet", "Statut", "Priorite", "Date"].map(h => (
+                {[t("sujet", lang), t("statut", lang), t("priorite", lang), t("date", lang)].map(h => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, color: sub, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Chargement...</td></tr>}
-              {!loading && filtered.length === 0 && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Aucun ticket trouve</td></tr>}
-              {!loading && filtered.map((t) => (
-                <tr key={t.id} onClick={() => setSelected(selected?.id === t.id ? null : t)}
-                  style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selected?.id === t.id ? "rgba(245,166,35,0.05)" : "transparent" }}>
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: text, fontWeight: 600 }}>{t.sujet}</td>
+              {loading && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>Loading...</td></tr>}
+              {!loading && filtered.length === 0 && <tr><td colSpan={4} style={{ padding: 40, textAlign: "center", color: sub }}>{t("aucun_ticket", lang)}</td></tr>}
+              {!loading && filtered.map((tk) => (
+                <tr key={tk.id} onClick={() => setSelected(selected?.id === tk.id ? null : tk)}
+                  style={{ borderTop: `1px solid ${border}`, cursor: "pointer", background: selected?.id === tk.id ? "rgba(245,166,35,0.05)" : "transparent" }}>
+                  <td style={{ padding: "14px 16px", fontSize: 13, color: text, fontWeight: 600 }}>{tk.sujet}</td>
                   <td style={{ padding: "14px 16px" }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statutColors[t.statut]?.bg, color: statutColors[t.statut]?.tx }}>{t.statut}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statutColors[tk.statut]?.bg, color: statutColors[tk.statut]?.tx }}>{tk.statut}</span>
                   </td>
                   <td style={{ padding: "14px 16px" }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: prioriteColors[t.priorite]?.bg, color: prioriteColors[t.priorite]?.tx }}>{t.priorite}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: prioriteColors[tk.priorite]?.bg, color: prioriteColors[tk.priorite]?.tx }}>{tk.priorite}</span>
                   </td>
-                  <td style={{ padding: "14px 16px", fontSize: 12, color: sub }}>{new Date(t.created_at).toLocaleDateString("fr-FR")}</td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: sub }}>{new Date(tk.created_at).toLocaleDateString(lang === "en" ? "en-US" : "fr-FR")}</td>
                 </tr>
               ))}
             </tbody>
@@ -207,37 +214,30 @@ export default function Support({ theme }) {
               <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", color: sub, fontSize: 18, cursor: "pointer" }}>x</button>
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: statutColors[selected.statut]?.bg, color: statutColors[selected.statut]?.tx }}>{selected.statut}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: prioriteColors[selected.priorite]?.bg, color: prioriteColors[selected.priorite]?.tx }}>{selected.priorite}</span>
-            </div>
-
-            {/* Messages */}
             <div style={{ flex: 1, overflowY: "auto", maxHeight: 320, display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
               {(selected.messages || []).map((msg, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: msg.auteur === "client" ? "flex-end" : "flex-start" }}>
                   <div style={{ maxWidth: "80%", background: msg.auteur === "client" ? "rgba(245,166,35,0.1)" : "rgba(74,155,142,0.1)", border: `1px solid ${msg.auteur === "client" ? "rgba(245,166,35,0.2)" : "rgba(74,155,142,0.2)"}`, borderRadius: 12, padding: "10px 14px" }}>
                     <div style={{ fontSize: 11, color: msg.auteur === "client" ? "#F5A623" : "#4A9B8E", fontWeight: 600, marginBottom: 4 }}>
-                      {msg.auteur === "client" ? "Vous" : "Equipe WOLO"}
+                      {msg.auteur === "client" ? t("vous", lang) : t("equipe_wolo", lang)}
                     </div>
                     <div style={{ fontSize: 13, color: text, lineHeight: 1.5 }}>{msg.texte}</div>
-                    <div style={{ fontSize: 10, color: sub, marginTop: 6 }}>{new Date(msg.date).toLocaleString("fr-FR")}</div>
+                    <div style={{ fontSize: 10, color: sub, marginTop: 6 }}>{new Date(msg.date).toLocaleString(lang === "en" ? "en-US" : "fr-FR")}</div>
                   </div>
                 </div>
               ))}
               {(!selected.messages || selected.messages.length === 0) && (
-                <div style={{ fontSize: 13, color: sub, textAlign: "center", padding: 20 }}>Aucun message</div>
+                <div style={{ fontSize: 13, color: sub, textAlign: "center", padding: 20 }}>{lang === "en" ? "No messages" : "Aucun message"}</div>
               )}
             </div>
 
-            {/* Envoyer un message */}
             {selected.statut !== "Ferme" && (
               <div style={{ display: "flex", gap: 8 }}>
-                <input placeholder="Votre message..." value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                <input placeholder={t("votre_message", lang)} value={newMessage} onChange={e => setNewMessage(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && envoyerMessage()}
                   style={{ ...inputStyle, flex: 1 }} />
                 <button onClick={envoyerMessage} disabled={sending} style={{ background: "linear-gradient(135deg, #F5A623, #E8830A)", border: "none", borderRadius: 8, color: "#0F0F1A", padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: sending ? 0.7 : 1, flexShrink: 0 }}>
-                  {sending ? "..." : "Envoyer"}
+                  {sending ? "..." : t("envoyer", lang)}
                 </button>
               </div>
             )}
