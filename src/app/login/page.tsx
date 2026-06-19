@@ -63,7 +63,7 @@ export default function Login() {
     setLoading(false);
   };
 
-  const inputStyle = { background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "12px 14px", color: "#E8E8F0", fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
+  const inputStyle = { background: "#0F0F1A", border: "1px solid #2A2A45", borderRadius: 8, padding: "12px 14px", color: "#E8E8F0", fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" as const };
 
   if (resetMode) {
     return (
