@@ -1,0 +1,247 @@
+export const translations = {
+  fr: {
+    // Sidebar
+    dashboard: "Dashboard",
+    clients: "Clients",
+    finances: "Finances",
+    taches: "Taches",
+    wiki: "Wiki",
+    alertes: "Alertes",
+    facturation: "Facturation",
+    support: "Support",
+    abonnement: "Abonnement",
+    deconnexion: "Deconnexion",
+
+    // Dashboard
+    bonjour: "Bonjour",
+    taches_a_faire: "taches a faire",
+    factures_impayees: "facture(s) impayee(s)",
+    revenus: "Revenus",
+    depenses: "Depenses",
+    solde_net: "Solde net",
+    pipeline_clients: "Pipeline clients",
+    clients_recents: "Clients recents",
+    transactions_recentes: "Transactions recentes",
+    aucun_client: "Aucun client",
+    aucune_transaction: "Aucune transaction",
+
+    // CRM
+    nouveau_client: "+ Nouveau client",
+    rechercher_client: "Rechercher un client...",
+    tous_statuts: "Tous les statuts",
+    tous_secteurs: "Tous les secteurs",
+    nom: "Nom",
+    contact: "Contact",
+    telephone: "Telephone",
+    email: "Email",
+    secteur: "Secteur",
+    statut: "Statut",
+    valeur: "Valeur (FCFA)",
+    pipeline: "Pipeline",
+    notes: "Notes",
+    sauvegarder: "Sauvegarder",
+    annuler: "Annuler",
+    aucun_client_trouve: "Aucun client trouve",
+
+    // Finances
+    nouvelle_transaction: "+ Nouvelle transaction",
+    entree: "Entree",
+    sortie: "Sortie",
+    libelle: "Libelle",
+    montant: "Montant",
+    date: "Date",
+    categorie: "Categorie",
+    toutes_categories: "Toutes les categories",
+    export_pdf: "Export PDF",
+    export_excel: "Export Excel",
+
+    // Taches
+    nouvelle_tache: "+ Nouvelle tache",
+    a_faire: "A faire",
+    en_cours: "En cours",
+    termine: "Termine",
+
+    // Support
+    support_titre: "Support",
+    support_desc: "Suivez vos demandes de support et incidents.",
+    creer_ticket: "+ Creer un ticket",
+    rechercher_ticket: "Rechercher un ticket...",
+    tous_statuts_s: "Tous les statuts",
+    toutes_priorites: "Toutes les priorites",
+    toutes_raisons: "Toutes les raisons",
+    sujet: "Sujet",
+    priorite: "Priorite",
+    raison: "Raison",
+    date_creation: "Date de creation",
+    reference: "Reference",
+    aucun_ticket: "Aucun ticket trouve",
+    envoyer: "Envoyer",
+    votre_message: "Votre message...",
+    equipe_wolo: "Equipe WOLO",
+    vous: "Vous",
+
+    // Facturation
+    nouvelle_facture: "+ Nouvelle facture",
+    creer_facture: "Creer la facture",
+    client: "Client",
+    numero: "N° Facture",
+    echeance: "Echeance",
+    lignes: "Lignes de facturation",
+    ajouter_ligne: "+ Ligne",
+    description: "Description",
+    quantite: "Qte",
+    prix_unitaire: "Prix unitaire",
+    total_ht: "Total HT",
+    tva: "TVA (18%)",
+    total_ttc: "Total TTC",
+    notes_f: "Notes (optionnel)",
+    envoyer_email: "Email",
+    payee: "Payee",
+    impayee: "Impayee",
+    en_attente: "En attente",
+    aucune_facture: "Aucune facture",
+
+    // Auth
+    connexion: "Connexion",
+    creer_compte: "Creer un compte",
+    acces_business_os: "Accedez a votre Business OS",
+    demarrer_gratuitement: "Demarrez gratuitement",
+    votre_nom: "Votre nom",
+    nom_entreprise: "Nom de votre entreprise",
+    mot_de_passe: "Mot de passe",
+    se_connecter: "Se connecter",
+    sinscrire: "S'inscrire",
+    pas_de_compte: "Pas encore de compte ?",
+    deja_compte: "Deja un compte ?",
+    mot_de_passe_oublie: "Mot de passe oublie ?",
+  },
+
+  en: {
+    // Sidebar
+    dashboard: "Dashboard",
+    clients: "Clients",
+    finances: "Finances",
+    taches: "Tasks",
+    wiki: "Wiki",
+    alertes: "Alerts",
+    facturation: "Invoicing",
+    support: "Support",
+    abonnement: "Subscription",
+    deconnexion: "Logout",
+
+    // Dashboard
+    bonjour: "Hello",
+    taches_a_faire: "tasks to do",
+    factures_impayees: "unpaid invoice(s)",
+    revenus: "Revenue",
+    depenses: "Expenses",
+    solde_net: "Net Balance",
+    pipeline_clients: "Client Pipeline",
+    clients_recents: "Recent Clients",
+    transactions_recentes: "Recent Transactions",
+    aucun_client: "No clients",
+    aucune_transaction: "No transactions",
+
+    // CRM
+    nouveau_client: "+ New Client",
+    rechercher_client: "Search a client...",
+    tous_statuts: "All statuses",
+    tous_secteurs: "All sectors",
+    nom: "Name",
+    contact: "Contact",
+    telephone: "Phone",
+    email: "Email",
+    secteur: "Sector",
+    statut: "Status",
+    valeur: "Value (FCFA)",
+    pipeline: "Pipeline",
+    notes: "Notes",
+    sauvegarder: "Save",
+    annuler: "Cancel",
+    aucun_client_trouve: "No client found",
+
+    // Finances
+    nouvelle_transaction: "+ New Transaction",
+    entree: "Income",
+    sortie: "Expense",
+    libelle: "Label",
+    montant: "Amount",
+    date: "Date",
+    categorie: "Category",
+    toutes_categories: "All categories",
+    export_pdf: "Export PDF",
+    export_excel: "Export Excel",
+
+    // Taches
+    nouvelle_tache: "+ New Task",
+    a_faire: "To do",
+    en_cours: "In progress",
+    termine: "Done",
+
+    // Support
+    support_titre: "Support",
+    support_desc: "Track your support requests and incidents.",
+    creer_ticket: "+ Create a ticket",
+    rechercher_ticket: "Search a ticket...",
+    tous_statuts_s: "All statuses",
+    toutes_priorites: "All priorities",
+    toutes_raisons: "All reasons",
+    sujet: "Subject",
+    priorite: "Priority",
+    raison: "Reason",
+    date_creation: "Created at",
+    reference: "Reference",
+    aucun_ticket: "No ticket found",
+    envoyer: "Send",
+    votre_message: "Your message...",
+    equipe_wolo: "WOLO Team",
+    vous: "You",
+
+    // Facturation
+    nouvelle_facture: "+ New Invoice",
+    creer_facture: "Create invoice",
+    client: "Client",
+    numero: "Invoice #",
+    echeance: "Due date",
+    lignes: "Invoice lines",
+    ajouter_ligne: "+ Line",
+    description: "Description",
+    quantite: "Qty",
+    prix_unitaire: "Unit price",
+    total_ht: "Subtotal",
+    tva: "VAT (18%)",
+    total_ttc: "Total",
+    notes_f: "Notes (optional)",
+    envoyer_email: "Email",
+    payee: "Paid",
+    impayee: "Unpaid",
+    en_attente: "Pending",
+    aucune_facture: "No invoices yet",
+
+    // Auth
+    connexion: "Login",
+    creer_compte: "Create an account",
+    acces_business_os: "Access your Business OS",
+    demarrer_gratuitement: "Start for free",
+    votre_nom: "Your name",
+    nom_entreprise: "Company name",
+    mot_de_passe: "Password",
+    se_connecter: "Sign in",
+    sinscrire: "Sign up",
+    pas_de_compte: "Don't have an account?",
+    deja_compte: "Already have an account?",
+    mot_de_passe_oublie: "Forgot password?",
+  }
+};
+
+export function getLang() {
+  if (typeof window === "undefined") return "fr";
+  const saved = localStorage.getItem("wolo_lang");
+  if (saved) return saved;
+  const browser = navigator.language?.slice(0, 2);
+  return browser === "en" ? "en" : "fr";
+}
+
+export function t(key, lang) {
+  return translations[lang]?.[key] || translations["fr"]?.[key] || key;
+}

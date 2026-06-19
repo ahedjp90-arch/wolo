@@ -1,29 +1,28 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getLang } from "@/lib/i18n";
+
+const moduleNames = {
+  fr: { dashboard: "Dashboard", crm: "Clients", finances: "Finances", taches: "Taches", wiki: "Wiki", alertes: "Alertes", facturation: "Facturation", support: "Support" },
+  en: { dashboard: "Dashboard", crm: "Clients", finances: "Finances", taches: "Tasks", wiki: "Wiki", alertes: "Alerts", facturation: "Invoicing", support: "Support" }
+};
 
 export default function Topbar({ activeNav, theme, setTheme }) {
-  const titres = {
-    dashboard: "Dashboard",
-    crm: "Clients",
-    finances: "Finances",
-    taches: "Tâches",
-    wiki: "Wiki",
-    alertes: "Alertes",
-    facturation: "Facturation",
-  };
-
-  const [dateStr, setDateStr] = useState("");
+  const [now, setNow] = useState(new Date());
+  const [lang, setLang] = useState("fr");
 
   useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const options = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
-      setDateStr(now.toLocaleDateString("fr-FR", options));
-    };
-    update();
-    const interval = setInterval(update, 60000);
+    setLang(getLang());
+    const interval = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
+
+  const toggleLang = () => {
+    const newLang = lang === "fr" ? "en" : "fr";
+    setLang(newLang);
+    localStorage.setItem("wolo_lang", newLang);
+    window.dispatchEvent(new Event("wolo_lang_change"));
+  };
 
   const isDark = theme === "dark";
   const bg = isDark ? "#111128" : "#FFFFFF";
@@ -31,15 +30,21 @@ export default function Topbar({ activeNav, theme, setTheme }) {
   const text = isDark ? "#E8E8F0" : "#111827";
   const sub = isDark ? "#6B6B8A" : "#6B7280";
 
+  const dateStr = now.toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
   return (
-    <div style={{ padding: "20px 32px", borderBottom: `1px solid ${border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: bg, flexShrink: 0 }}>
+    <div style={{ background: bg, borderBottom: `1px solid ${border}`, padding: "0 32px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
       <div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: text }}>{titres[activeNav] || activeNav}</div>
-        <div style={{ fontSize: 13, color: sub, marginTop: 2, textTransform: "capitalize" }}>{dateStr}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: text }}>{moduleNames[lang]?.[activeNav] || moduleNames.fr[activeNav]}</div>
+        <div style={{ fontSize: 12, color: sub, marginTop: 2, textTransform: "capitalize" }}>{dateStr}</div>
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={() => setTheme("light")} style={{ background: theme === "light" ? "#F5A623" : "transparent", border: `1px solid ${border}`, borderRadius: 8, color: theme === "light" ? "#0F0F1A" : sub, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>☀️ Clair</button>
-        <button onClick={() => setTheme("dark")} style={{ background: theme === "dark" ? "#F5A623" : "transparent", border: `1px solid ${border}`, borderRadius: 8, color: theme === "dark" ? "#0F0F1A" : sub, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>🌙 Sombre</button>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button onClick={toggleLang} style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.3)", borderRadius: 8, color: "#F5A623", padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          {lang === "fr" ? "🇬🇧 EN" : "🇫🇷 FR"}
+        </button>
+        <button onClick={() => setTheme(isDark ? "light" : "dark")} style={{ background: isDark ? "#1A1A2E" : "#F3F4F6", border: `1px solid ${border}`, borderRadius: 8, color: sub, padding: "6px 12px", fontSize: 16, cursor: "pointer" }}>
+          {isDark ? "☀️" : "🌙"}
+        </button>
       </div>
     </div>
   );
