@@ -11,7 +11,6 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         apikey: process.env.CINETPAY_API_KEY,
-        site_id: process.env.CINETPAY_SITE_ID || '',
         transaction_id: transactionId,
         amount: amount,
         currency: 'XOF',
@@ -35,16 +34,15 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (data.code === '201') {
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         paymentUrl: data.data.payment_url,
-        transactionId 
+        transactionId
       });
     }
 
     return NextResponse.json({ error: data.message || 'Erreur CinetPay' }, { status: 400 });
   } catch (err) {
-    console.error('CinetPay error:', err);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
