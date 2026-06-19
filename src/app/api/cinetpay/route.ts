@@ -4,22 +4,7 @@ export async function POST(request: Request) {
   try {
     const { amount, email, nom, plan } = await request.json();
 
-    const accountKey = process.env.CINETPAY_API_KEY;
-    const accountPassword = process.env.CINETPAY_PWD;
-
-    const authRes = await fetch('https://api.cinetpay.net/v1/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apikey: accountKey, password: accountPassword }),
-    });
-
-    const authData = await authRes.json();
-    const token = authData?.data?.token;
-
-    if (!token) {
-      return NextResponse.json({ error: 'Auth echouee: ' + JSON.stringify(authData) }, { status: 400 });
-    }
-
+    const apikey = process.env.CINETPAY_API_KEY;
     const nomParts = (nom || 'Client WOLO').split(' ');
     const firstName = nomParts[0] || 'Client';
     const lastName = nomParts.slice(1).join(' ') || 'WOLO';
@@ -29,7 +14,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token,
+        'x-api-key': apikey || '',
       },
       body: JSON.stringify({
         currency: 'XOF',
