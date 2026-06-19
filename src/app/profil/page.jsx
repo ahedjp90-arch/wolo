@@ -80,7 +80,7 @@ export default function Profil() {
   const sub = isDark ? "#6B6B8A" : "#6B7280";
   const input = isDark ? "#0F0F1A" : "#F9FAFB";
   const inputBorder = isDark ? "#2A2A45" : "#D1D5DB";
-  const inputStyle = { background: input, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "12px 14px", color: text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" as const };
+  const inputStyle = { background: input, border: `1px solid ${inputBorder}`, borderRadius: 8, padding: "12px 14px", color: text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
 
   return (
     <div style={{ minHeight: "100vh", background: bg, padding: "60px 48px", fontFamily: "Inter, sans-serif" }}>
