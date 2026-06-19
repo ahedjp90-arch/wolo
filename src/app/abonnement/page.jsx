@@ -19,6 +19,8 @@ export default function Abonnement() {
     setTheme(savedTheme);
     const savedEmail = localStorage.getItem("wolo_email");
     if (savedEmail) setEmail(savedEmail);
+    const savedNom = localStorage.getItem("wolo_nom");
+    if (savedNom) setNom(savedNom);
   }, []);
 
   const isDark = theme === "dark";
@@ -28,14 +30,14 @@ export default function Abonnement() {
   const text = isDark ? "#E8E8F0" : "#111827";
   const sub = isDark ? "#6B6B8A" : "#6B7280";
 
-  const payer = (plan, method) => {
+  const payerPaystack = (plan) => {
     if (plan.prix === 0) {
       localStorage.setItem("wolo_plan", "FREE");
       localStorage.setItem("wolo_trial_end", Date.now() + 7 * 24 * 60 * 60 * 1000);
       window.location.href = "/";
       return;
     }
-    setLoading(`${method}_${plan.code}`);
+    setLoading(`ps_${plan.code}`);
     const handler = window.PaystackPop.setup({
       key: "pk_live_c5c7a3ab3f50720c098bc2508d54fb401dc266a6",
       email: email,
@@ -51,6 +53,28 @@ export default function Abonnement() {
       onClose: () => setLoading(null),
     });
     handler.openIframe();
+  };
+
+  const payerCinetpay = async (plan) => {
+    if (plan.prix === 0) return;
+    setLoading(`cp_${plan.code}`);
+    try {
+      const res = await fetch('/api/cinetpay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: plan.prix, email, nom, plan: plan.nom }),
+      });
+      const data = await res.json();
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        alert('Erreur CinetPay : ' + (data.error || 'Impossible de traiter le paiement'));
+        setLoading(null);
+      }
+    } catch (err) {
+      alert('Erreur de connexion');
+      setLoading(null);
+    }
   };
 
   return (
@@ -86,18 +110,22 @@ export default function Abonnement() {
               </div>
 
               {p.prix === 0 ? (
-                <button onClick={() => payer(p, "free")} style={{ width: "100%", background: "linear-gradient(135deg, #4A9B8E, #3A8B7E)", border: "none", borderRadius: 10, color: "#fff", padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                <button onClick={() => payerPaystack(p)} style={{ width: "100%", background: "linear-gradient(135deg, #4A9B8E, #3A8B7E)", border: "none", borderRadius: 10, color: "#fff", padding: "12px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                   Demarrer gratuitement
                 </button>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <button onClick={() => payer(p, "mm")} disabled={loading === `mm_${p.code}`}
-                    style={{ width: "100%", background: p.popular ? "linear-gradient(135deg, #F5A623, #E8830A)" : "transparent", border: p.popular ? "none" : `1px solid ${border}`, borderRadius: 10, color: p.popular ? "#0F0F1A" : text, padding: "11px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: loading === `mm_${p.code}` ? 0.7 : 1 }}>
-                    {loading === `mm_${p.code}` ? "..." : "📱 Mobile Money"}
+                  <button onClick={() => payerPaystack(p)} disabled={!!loading}
+                    style={{ width: "100%", background: p.popular ? "linear-gradient(135deg, #F5A623, #E8830A)" : "transparent", border: p.popular ? "none" : `1px solid ${border}`, borderRadius: 10, color: p.popular ? "#0F0F1A" : text, padding: "10px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
+                    {loading === `ps_${p.code}` ? "..." : "📱 Mobile Money"}
                   </button>
-                  <button onClick={() => payer(p, "card")} disabled={loading === `card_${p.code}`}
-                    style={{ width: "100%", background: "transparent", border: `1px solid ${border}`, borderRadius: 10, color: text, padding: "11px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: loading === `card_${p.code}` ? 0.7 : 1 }}>
-                    {loading === `card_${p.code}` ? "..." : "💳 Carte bancaire"}
+                  <button onClick={() => payerPaystack(p)} disabled={!!loading}
+                    style={{ width: "100%", background: "transparent", border: `1px solid ${border}`, borderRadius: 10, color: text, padding: "10px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
+                    {loading === `ps_${p.code}` ? "..." : "💳 Carte internationale (Paystack)"}
+                  </button>
+                  <button onClick={() => payerCinetpay(p)} disabled={!!loading}
+                    style={{ width: "100%", background: "transparent", border: `1px solid rgba(245,166,35,0.4)`, borderRadius: 10, color: "#F5A623", padding: "10px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
+                    {loading === `cp_${p.code}` ? "..." : "💳 Carte locale (CinetPay)"}
                   </button>
                 </div>
               )}
@@ -106,7 +134,7 @@ export default function Abonnement() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: 40, fontSize: 13, color: sub }}>
-          Paiement securise via Paystack · Wave · Orange Money · MTN · Visa · Mastercard
+          📱 Mobile Money via Paystack · 💳 Carte internationale via Paystack · 💳 Carte locale via CinetPay
         </div>
         <div style={{ textAlign: "center", marginTop: 16 }}>
           <a href="/" style={{ fontSize: 13, color: sub, textDecoration: "none" }}>← Retour a l'application</a>
