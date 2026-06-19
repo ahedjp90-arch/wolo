@@ -2,18 +2,18 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-const navItems = [
-  { id: "dashboard", icon: "⬡", label: "Dashboard" },
-  { id: "crm", icon: "◈", label: "Clients" },
-  { id: "finances", icon: "◎", label: "Finances" },
-  { id: "taches", icon: "◻", label: "Taches" },
+const getNavItems = (lang) => [
+  { id: "dashboard", icon: "⬡", label: lang === "en" ? "Dashboard" : "Dashboard" },
+  { id: "crm", icon: "◈", label: lang === "en" ? "Clients" : "Clients" },
+  { id: "finances", icon: "◎", label: lang === "en" ? "Finances" : "Finances" },
+  { id: "taches", icon: "◻", label: lang === "en" ? "Tasks" : "Taches" },
   { id: "wiki", icon: "◷", label: "Wiki" },
-  { id: "alertes", icon: "◉", label: "Alertes" },
-  { id: "facturation", icon: "🧾", label: "Facturation" },
+  { id: "alertes", icon: "◉", label: lang === "en" ? "Alerts" : "Alertes" },
+  { id: "facturation", icon: "🧾", label: lang === "en" ? "Invoicing" : "Facturation" },
   { id: "support", icon: "🎧", label: "Support" },
 ];
 
-export default function Sidebar({ activeNav, setActiveNav, theme }) {
+export default function Sidebar({ activeNav, setActiveNav, theme, lang = "fr" }) {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState({ nom: "", email: "", initiales: "?" });
   const [ticketsNonLus, setTicketsNonLus] = useState(0);
@@ -37,31 +37,11 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
     }
   };
 
-  const playNotification = () => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
-    } catch(e) {}
-  };
-
   const checkTickets = async () => {
     const uid = localStorage.getItem("wolo_user_id");
     if (!uid) return;
     const { data } = await supabase.from("tickets").select("id, lu_client").eq("user_id", uid).eq("lu_client", false);
     const count = (data || []).length;
-    if (count > prevTickets.current && prevTickets.current !== undefined) {
-      playNotification();
-    }
     prevTickets.current = count;
     setTicketsNonLus(count);
   };
@@ -83,6 +63,8 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
       }
     }
   };
+
+  const navItems = getNavItems(lang);
 
   return (
     <div style={{ width: collapsed ? 64 : 220, background: isDark ? "#111128" : "#FFFFFF", borderRight: `1px solid ${isDark ? "#1E1E38" : "#E5E7EB"}`, display: "flex", flexDirection: "column", padding: "24px 0", transition: "width 0.25s ease", flexShrink: 0, position: "relative", zIndex: 10, height: "100vh" }}>
@@ -107,14 +89,14 @@ export default function Sidebar({ activeNav, setActiveNav, theme }) {
       <div style={{ padding: "0 10px 8px" }}>
         <a href="/abonnement" style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 12px", background: "linear-gradient(135deg, rgba(245,166,35,0.15), rgba(232,131,10,0.1))", border: "1px solid rgba(245,166,35,0.3)", borderRadius: 10, cursor: "pointer", color: "#F5A623", fontSize: 14, fontWeight: 600, textDecoration: "none", overflow: "hidden", whiteSpace: "nowrap" }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>⭐</span>
-          {!collapsed && <span>Abonnement</span>}
+          {!collapsed && <span>{lang === "en" ? "Subscription" : "Abonnement"}</span>}
         </a>
       </div>
 
       <div style={{ padding: "0 10px 0" }}>
         <button onClick={handleLogout} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 12px", background: "rgba(232,85,85,0.08)", border: "none", borderRadius: 10, cursor: "pointer", color: "#E85555", fontSize: 14, fontWeight: 500, textAlign: "left", overflow: "hidden", whiteSpace: "nowrap" }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>⏻</span>
-          {!collapsed && <span>Deconnexion</span>}
+          {!collapsed && <span>{lang === "en" ? "Logout" : "Deconnexion"}</span>}
         </button>
       </div>
 

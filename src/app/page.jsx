@@ -28,7 +28,10 @@ export default function Home() {
     else setAuth(true);
     setLang(getLang());
 
-    const handleLangChange = () => setLang(getLang());
+    const handleLangChange = () => {
+      const newLang = getLang();
+      setLang(newLang);
+    };
     window.addEventListener("wolo_lang_change", handleLangChange);
     return () => window.removeEventListener("wolo_lang_change", handleLangChange);
   }, []);
@@ -52,15 +55,15 @@ export default function Home() {
     <div style={{ display: "flex", height: "100vh", background: bg, overflow: "hidden" }}>
       <Sidebar activeNav={activeNav} setActiveNav={handleNav} theme={theme} lang={lang} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <Topbar activeNav={activeNav} theme={theme} setTheme={handleTheme} />
-        {activeNav === "dashboard" && <Dashboard theme={theme} lang={lang} />}
-        {activeNav === "crm" && <CRM theme={theme} lang={lang} />}
-        {activeNav === "finances" && <Finances theme={theme} lang={lang} />}
-        {activeNav === "taches" && <Taches theme={theme} lang={lang} />}
-        {activeNav === "wiki" && <Wiki theme={theme} lang={lang} />}
-        {activeNav === "alertes" && <Alertes theme={theme} lang={lang} />}
-        {activeNav === "facturation" && <Facturation theme={theme} lang={lang} />}
-        {activeNav === "support" && <Support theme={theme} lang={lang} />}
+        <Topbar activeNav={activeNav} theme={theme} setTheme={handleTheme} lang={lang} setLang={(l) => { setLang(l); localStorage.setItem("wolo_lang", l); window.dispatchEvent(new Event("wolo_lang_change")); }} />
+        {activeNav === "dashboard" && <Dashboard key={`dashboard_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "crm" && <CRM key={`crm_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "finances" && <Finances key={`finances_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "taches" && <Taches key={`taches_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "wiki" && <Wiki key={`wiki_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "alertes" && <Alertes key={`alertes_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "facturation" && <Facturation key={`facturation_${lang}`} theme={theme} lang={lang} />}
+        {activeNav === "support" && <Support key={`support_${lang}`} theme={theme} lang={lang} />}
       </div>
     </div>
   );
